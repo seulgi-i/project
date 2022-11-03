@@ -1,0 +1,1337 @@
+시큐리티
+1. 권한에 따른 페이지 접속
+2. 회원가입 시 비밀번호 암호화
+3. BCrypt 방식(BcryptPasswordEncoder 클래스)
+4. CSRF
+5. 이메일 인증 (네이버 보안 설정)
+
+[NAVER_EMAIL_설정]
+
+POP 서버명 : pop.naver.comSMTP 
+서버명 : smtp.naver.com
+POP 포트 : 995, 보안연결(SSL) 필요
+SMTP 포트 : 465, 보안 연결(SSL) 필요
+
+IMAP 서버명 : imap.naver.comSMTP 
+서버명 : smtp.naver.com
+IMAP 포트 : 993, 보안연결(SSL) 필요
+SMTP 포트 : 587, 보안 연결(TLS) 필요
+
+아이디 : 네이버 아이디
+비밀번호 : 네이버 로그인 비밀번호
+
+----- [이메일 인증 과정] -----
+login.do > 회원가입 > 비밀번호 암호화, login_action.do (주석 처리)로 가지만 타지 않고 > 
+시큐리티 > UserAuthenticationService > 권한부여(default ROLE_USER), enabled 체크 > 성공, 실패, 거부
+enabled가 0이면   실패 > UserLoginFailureHandler >
+아이디와 matches()로 회원이 입력한 비밀번호와 암호화된 비밀번호가 일치하는지 확인 > 일치 시 이메일 인증하세요!
+아이디 비밀번호 불일치 시 > 로그인 페이지로 이동
+
+key(이메일) 	authority	enabled SQL에서 확인
+
+이메일 전송
+// 시큐리티
+String key = EmailChkHandler.getKey();
+dto.setKey(key);		
+		
+//회원가입 처리 (DAO에서 DB 처리)
+int insertCnt = dao.insertCustomer(dto);
+System.out.println("service inserCnt : " + insertCnt);
+// 시큐리티 - 가입성공시 이메일인증을 위해 이메일 전송
+   if(insertCnt == 1) {
+      dao.sendEmail(email, key);   // email은 네이버 이메일   
+	}
+
+네이버 이메일 로그인
+메일에서 회원가입 인증 메일 도착
+메일 안에서 링크 클릭 > emailChkAction.do (key 포함) > controller > emailChkAction.jsp 이동
+
+이메일 인증 성공 (enabled 1 update)
+SQL(DB)에서 mvc_customer_tbl에서 enabled 1 확인
+로그인 (id, password(1234)) > 
+UserAuthenticationService (enabled 1) [성공, 실패, 거부] 처리
+enabled 1 : return UserVO > 시큐리티에서 자동 matches() > matches() 성공
+> UserLoginSuccessHandler > 로그인 성공!, @@님 반갑습니다 우측 상단 확인
+관리자는 authority를 ROLE_ADMIN으로 update 해주고 boardList.bo 이동
+회원 : main.do 이동
+
+matches() 실패 > UserLoginFailureHandler
+
+authority 권한이 없는 경우 UserDeniedHandler > common/accessDenied.jsp 이동
+
+주의사항 security-context.xml의 form과 action이 일치해야 한다
+<!-- 로그인폼 -->
+<!-- /login.do => /login_action.do => UserAuthenticationService => 성공/실패/거부 -->
+<!-- 5개 설정을 소스와 일치시켜야 한다. -->
+<security:form-login login-page="/login.do"
+	login-processing-url="/login_action.do"
+	authentication-success-handler-ref="userLoginSuccessHandler"
+	authentication-failure-handler-ref="userLoginFailureHandler"
+	username-parameter="id" password-parameter="password" 
+/>
+-----------------------------
+
+/*
+   mvc_member_tbl : 시큐리티 관련 컬럼 추가, 
+   패스워드 컬럼(100) : 암호화된 비밀번호 저장해야 하므로
+   회원 가입 : 이메일은 gmail로 작성해서 이메일 인증을 받도록 한다.
+                                    
+   회원 수정 : 비밀번호 value는 뿌려주지 않고 입력받도록 한다.(암호화된 비밀번호가 다시 암호화되지않도록 하기 위함)
+                                     
+   테스트 : 회원가입(비밀번호 암호화) -> 로그인  클릭시 이메일 인증요청(이메일 인증 후 -> 로그인)
+   회원가입, 회원수정 => (비밀번호 암호화) : BCryptPasswordEncoder -> encoder
+   로그인 : BCryptPasswordEncoder -> matches
+   
+   이메일 인증전 구글 보안 설정을 풀어놓는다. [보안 수준이 낮은 앱의 액세스] : [확인]으로 변경
+   
+   // 에러
+   관리자만 접근할 수 있는 페이지입니다. => jsp(input 태그 있는)에 csrf 추가안한 경우
+   localhost 페이지를 찾을 수 없음 => 권한 => csrf 추가
+   <!-- 로그인한 사용자 영역(customer + 관리자) : 오류 : id가 pk이므로 admin 권한을 1개밖에 부여할 수 없다. 
+      <security:intercept-url   pattern="/**.ad" access="hasRole('ROLE_ADMIN', 'ROLE_USER')" />
+   --> 
+   
+   헤더 수정 : 로그인 안한 경우 로그인으로 연결되도록 수정
+
+*/
+
+1. 플젝생성
+
+2. 계정생성 및 테이블생성
+
+2-1)
+--******************* 일반 계정 생성 =>[시스템계정(System_117)에서 작업 ***********
+--- 1. 계정생성
+-- create user <계정이름> identified by <계정암호> default tablespace users;
+   create user jsp_pj_117 identified by tiger default tablespace users;
+-- 2. 사용자 권한 부여
+   grant connect, resource to jsp_pj_117;
+   grant create view to jsp_pj_117;
+   
+--  grant connect, resource,create view to jsp_pj_117;   
+-- 3. 락 해제
+-- alter user <계정이름> account unlock;
+    alter user jsp_pj_117 account unlock;
+ 
+-- 실행결과   
+--User SCOTT이(가) 생성되었습니다.
+--Grant을(를) 성공했습니다.
+--User SCOTT이(가) 변경되었습니다.
+
+-- (+) 계정연결
+--------------------------------------------
+-- 4. 계정 잘못만든 경우 계정 삭제하기 -- drop user <계정이름> cascade;
+    drop user jsp_pj_117 cascade; 
+
+-- 5. 패스워드 변경
+--alter user <계정이름> identified by <패스워드>;
+    alter user jsp_pj_117 identified by tiger; 
+
+2-2) 회원테이블 생성
+-- 회원정보, mvc_customer_tbl 생성
+-- 시큐리티 반영(password 100으로 사이즈 조정, key, authority, enabled 컬럼3개추가)
+
+DROP TABLE mvc_customer_tbl CASCADE constraints;
+CREATE TABLE mvc_customer_tbl(
+    id        VARCHAR2(20) PRIMARY KEY,
+    password  VARCHAR2(100) NOT NULL,  -- 암호화된 비밀번호를 저장해야 하므로 사이즈 크게 
+    name      VARCHAR2(20) NOT NULL,   
+    birthday  DATE         NOT NULL,
+    address   VARCHAR2(50) NOT NULL,
+    hp        VARCHAR2(13),
+    email     VARCHAR2(50) NOT NULL,
+    regDate  TIMESTAMP DEFAULT sysdate,   -- 가입일
+    -- 시큐리티를 위한 추가
+    key      VARCHAR2(100), -- 회원가입시 이메일 key 추가
+    authority VARCHAR2(30) DEFAULT 'ROLE_USER', -- 권한 : ROLE_USER:customer, ROLE_ADMIN:관리자
+    enabled   CHAR(1)    DEFAULT 0    -- 계정사용 가능여부(1:사용가능, 0:사용불가) : 이메일인증시 1로 update
+);
+
+   
+3. context.xml에 컨넥션풀 추가
+ <Resource author="Container" 
+     driverClassName="oracle.jdbc.driver.OracleDriver" 
+     maxActive="5" maxWait="1000" 
+     name="jdbc/jsp_pj_117" 
+     password="tiger"
+     type="javax.sql.DataSource" 
+     url="jdbc:oracle:thin:@localhost:1521:xe" 
+     username="jsp_pj_117"/>
+
+4. 자바 버전 설정
+    4-1).
+   - project 우클릭 > properties > Project Facets > java를 1.8로 변경
+   Runtimes 탭에서 Apache Tomcat v8.5 클릭 > Apply 버튼
+   
+   - project 우클릭 > properties > Java Build Path > Library 탭 > jre System library 선택후 Edit 선택 / 또는 jre System library 더블클릭
+   > 세번째 workspace default JRE(jre1.8.0_xxx) 선택
+   
+   - java compiler - 1.8버전 확인
+   
+   4-2) pom.xml에 버전 반영(스프링버전이 3,4버전이면 작동안됨, 매우 중요)
+   <properties>
+      <java-version>1.8</java-version>
+      <org.springframework-version>5.1.8.RELEASE</org.springframework-version>      
+      
+  4-3) 실행 : 
+   http://localhost/pj_117/
+   => http://localhost/세번째 패키지명/
+   
+5. pom.xml
+5-1) Mybatis 설정
+   <!-- Mybatis 설정 시작 -->
+   <dependency>
+       <groupId>org.mybatis</groupId>
+       <artifactId>mybatis-spring</artifactId>
+       <version>1.3.2</version>
+   </dependency>
+      
+   <dependency>
+       <groupId>org.mybatis</groupId>
+       <artifactId>mybatis</artifactId>
+       <version>3.4.6</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-jdbc</artifactId>
+       <version>5.1.8.RELEASE</version>
+   </dependency>
+   <!-- Mybatis 설정 끝 -->
+ 
+////////  
+5-2) security 설정
+   <!-- 스프링 시큐리티 설정 시작 -->
+   <dependency>
+       <groupId>org.springframework.security</groupId>
+       <artifactId>spring-security-config</artifactId>
+       <version>5.1.3.RELEASE</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework.security</groupId>
+       <artifactId>spring-security-core</artifactId>
+       <version>5.1.3.RELEASE</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework.security</groupId>
+       <artifactId>spring-security-taglibs</artifactId>
+       <version>5.1.3.RELEASE</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework.security</groupId>
+       <artifactId>spring-security-web</artifactId>
+       <version>5.1.3.RELEASE</version>
+   </dependency>
+   <!-- Security 설정 종료 -->
+   
+////////
+5-3) Java Mail API : 이메일 인증
+    
+    <!-- Java Mail API : 이메일 인증-->
+   <dependency>
+       <groupId>javax.mail</groupId>
+       <artifactId>mail</artifactId>
+       <version>1.4.7</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>com.sun.mail</groupId>
+       <artifactId>javax.mail</artifactId>
+       <version>1.5.6</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-context-support</artifactId>
+       <version>4.1.6.RELEASE</version>
+   </dependency>
+   <!-- Java Mail API -->
+
+
+
+6. src/main/resources 
+ 매우 중요 ==> ////////
+   
+    우클릭 > new > Spring Bean Configuration File >
+6-1)   security-context.xml => 매우중요
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<!-- Namespaces탭 : security 체크후 선택 > 오른쪽 4.2 버전 선택 -->
+	<security:http pattern="/resources/**" security="none" />
+   	<security:http pattern="/common/**" security="none" />
+   	<security:http auto-config="true" use-expressions="true" create-session="never" >
+   	
+   		<!-- 관리자 권한 영역 -->
+      	<security:intercept-url   pattern="/**.st" access="hasRole('ROLE_ADMIN')" />      	
+      
+      	<!-- 권한에 관계없이 접속 가능영역(guest도 접속 가능)  -->
+      	<security:intercept-url   pattern="/**.do" access="permitAll" />
+      
+      	<!-- 로그인한 사용자 영역(customer + 관리자) : id가 pk이므로 hasRole을 주면 권한 user / admin 1개 부여 밖에 안되므로 hasAnyRole 처리 -->
+      	<security:intercept-url   pattern="/**.bo" access="hasAnyRole('ROLE_USER', 'ROLE_ADMIN')" />
+      
+      	<!-- 로그인폼 -->
+      	<!-- login.do => login_check.do => UserAuthenticationService => 성공/실패/거부 -->
+      	<!-- 5개 설정을 소스와 일치시켜야 한다. -->
+      	<security:form-login login-page="/login.do"
+        	login-processing-url="/login_action.do"
+            authentication-success-handler-ref="userLoginSuccessHandler"
+            authentication-failure-handler-ref="userLoginFailureHandler"
+            username-parameter="id" password-parameter="password" 
+        />
+         
+      	<security:session-management>
+        	<!-- 같은 브라우저에서 여러창 동시접속수 / 세션만료시 이동할 주소 / 최대 세션 초과시 에러 옵션-->
+         	<security:concurrency-control max-sessions="2" 
+            	expired-url="/login.do"
+            	error-if-maximum-exceeded="true"
+         	/>
+      	</security:session-management>         
+      
+      	<!-- 접근 권한이 없는 경우 작동 -->
+      	<security:access-denied-handler ref="userDeniedHandler" />  	
+   	</security:http>
+   	
+   	<!-- 로그인 성공시 작동 -->
+   	<bean id="userLoginSuccessHandler" class="spring.mvc.pj_117.service.UserLoginSuccessHandler">
+      	<!-- <constructor-arg name="sqlSession" ref="sqlSession" /> -->
+   	</bean>
+   
+   	<!-- 로그인 실패시 작동 -->
+   	<bean id="userLoginFailureHandler" class="spring.mvc.pj_117.service.UserLoginFailureHandler">
+      	<!-- <constructor-arg name="sqlSession" ref="sqlSession" />
+      	<constructor-arg name="passwordEncoder" ref="bcryptPasswordEncoder" />  -->
+   	</bean>
+   
+   	<!-- 접근 권한이 없는 경우 작동 -->
+   	<bean id="userDeniedHandler" class="spring.mvc.pj_117.service.UserDeniedHandler" />
+   
+   	<!-- 로그인 인증처리 클래스 -->
+   	<!-- login-processing-url="/login_action.do"에 의해 자동호출 > 컨트롤러가 아닌 시큐리티에서 처리 -->
+   	<bean id="userService" class="spring.mvc.pj_117.service.security.UserAuthenticationService" >
+   		<constructor-arg name="sqlSession" ref="sqlSession" />
+   	</bean>
+   	
+   	<!-- 비밀번호 암호화 클래스 -->
+   	<bean id="bcryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+</beans>
+
+
+
+6-2) login.jsp - action="시큐리티의 login-processing-url"
+<form name="loginform" action="${path}/login_check.do" method="post" onsubmit="return loginCheck();">
+
+     컨트롤러에서는 구현하지 않는다. (UserAuthenticationService 에서 처리(성공/실패/거부)하므로
+   
+////////
+   
+6-3)  dataSource-config.xml
+소스 작성
+      <!-- Mybatis 설정 시작 -->
+      <!-- 컨넥션풀 -->
+      <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+         <property name="jndiName" value="java:comp/env/jdbc/jsp_pj_117" />
+         <property name="resourceRef" value="true" />
+      </bean>
+      
+      <!-- Mybatis 파일 위치 지정, 컨넥션풀 -->
+      <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+         <property name="dataSource" ref="dataSource" />
+         <property name="mapperLocations" value="classpath:mappers/**/*.xml" />  
+      </bean>
+      
+      // 생성자 DI이며, sqlSession이 참조변수
+      <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+         <constructor-arg ref="sqlSessionFactory" />
+      </bean>
+      
+      <!-- Mybatis 설정 종료 -->
+      
+      
+      <!-- 트랜잭션 관리자 : @Transactional 어노테이션 추가 -->
+      <!-- Namespace 탭에서 tx 추가 -->
+      <tx:annotation-driven transaction-manager="transactionManager" />
+      <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+         <property name="dataSource" ref="dataSource" />
+      </bean>
+   
+6-3) DAOImpl에 sqlSession 추가
+   
+   // Mybatis jar 파일들이 pom.xml에 등록되어 있어야 SqlSession이 import 가능
+   // dataSource-config.xml에 bean id="sqlSession"로 설정되어 있어야 함
+   
+   @Autowired
+   SqlSession sqlSession;   
+   
+6-4) 마이바티스 매퍼 파일 작성
+   
+      => 1. 한두줄의 자바코드로 DB연동을 처리한다
+         2. SQL 명령어를 자바 코드에서 분리하여 XML 파일에 Mapper로 따로 관리
+         
+      - src/main/resources/에서 폴더 생성 : mappers 폴더 생성
+      - 그 폴더 우클릭 > new > other > xml file > customerMapper.xml 생성
+      -  customerMapper.xml에 추가
+      <?xml version="1.0" encoding="UTF-8"?>
+
+   <!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+    <mapper namespace="spring.mvc.pj_117.dao.CustomerDAO">  <!-- namespace="패키지명.인터페이스" -->
+   
+    </mapper> 
+   
+
+7. web.xml
+ 7-1)
+   <!-- 한글 안깨지게 처리 시작 -->
+   <filter>
+      <filter-name>encodingFilter</filter-name>
+      <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+      
+      <init-param>
+         <param-name>encoding</param-name>
+         <param-value>UTF-8</param-value>
+      </init-param>   
+      
+      <init-param>
+         <param-name>forceEncoding</param-name>
+         <param-value>true</param-value>
+      </init-param>
+   </filter>
+   
+   <filter-mapping>
+      <filter-name>encodingFilter</filter-name>
+      <url-pattern>/*</url-pattern>
+   </filter-mapping>
+   <!-- 한글 안깨지게 처리 종료 -->
+
+//////////////   
+7-2) web.xml에서 security 설정 추가
+   <context-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>/WEB-INF/spring/root-context.xml
+               classpath:/dataSource-config.xml  
+               classpath:/security-context.xml  <!-- 1. 시큐리티 추가-->
+      </param-value>
+   </context-param>
+   
+   <!-- 2. 시큐리티 추가 : servlet-context.xml => 아래 8.에서 확인 -->
+   
+      
+7-3)
+
+   <!-- 3.시큐리티 추가 -->
+   <!-- 스프링 시큐리티에서 사용하는 세션 이벤트처리 관련 리스너로서, 세션만료체크, 동시 로그인 제한 등의 기능 제공 -->
+   <listener>
+      <listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>   
+   </listener>
+
+   <!-- 4.시큐리티 추가 시작 -->
+   <!-- 애플리케이션의 모든 요청을 스프링 시큐리티에서 처리하도록 하는 필터 -->
+   <!-- 보안 필터 체인 : 보안과 관련된 작업을 처리한다.
+      - 로그인 폼을 보여주거나, 접근 권한이 없는 경우 403 Forbidden(권한없음) 상태코드를 응답
+      - DelegatingFilterProxy -> FilterChainProxy -> SecurityFilterChain -> 실제 자원
+    -->
+   <filter>
+      <filter-name>springSecurityFilterChain</filter-name>
+      <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+   </filter>
+   <filter-mapping>
+      <filter-name>springSecurityFilterChain</filter-name>
+      <url-pattern>/*</url-pattern>
+   </filter-mapping>
+   <!-- 시큐리티 추가 종료 -->
+
+   <!-- 5. 에러처리 페이지 시작 -->
+   <error-page>
+      <error-code>500</error-code>
+      <location>/customer/login</location>
+   </error-page>
+   <!-- 에러처리 페이지 종료 -->
+   
+   <!-- 6.세션 타임 아웃 설정(480분) : 세션타임을 짧게 한 경우 세션이 끊어져서 비밀번호 암호화가 잘 작동 안됨 -->
+   <session-config>
+      <session-timeout>480</session-timeout>
+   </session-config>
+
+
+8.  servlet-context.xml  
+
+   <!-- 시큐리티 추가8-1. 정적리소스 파일 : 시큐리티 적용 안할 폴더 지정-->
+   <resources mapping="/common/**" location="/WEB-INF/views/common/" />
+   
+
+    <!-- 시큐리티 추가8-2. @Secured 어노테이션 활성화, 사용권한 제한-->
+   <!-- Namespace 탭에서 security 추가 -> security 클릭 -> 오른쪽에 네임스페이스 중 버전 4.2 선택 : 오른쪽에 안뜨는 이유는 pom.xml에 시큐리티 설정안된경우이며, 이클립스 버전은 2019버전 쓸것 -->
+   <security:global-method-security secured-annotations="enabled" />
+//////////////   
+   	[NAVER]
+    <!-- mail bean(이메일 인증) NAVER -->
+    <beans:bean id="javaMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <beans:property name="host" value="smtp.naver.com" />
+        <beans:property name="port" value="587" />
+        <beans:property name="username" value="xxxx@naver.com" />
+        <beans:property name="password" value="xxxxxxx" />
+        <beans:property name="javaMailProperties">
+            <beans:props>
+                <beans:prop key="mail.smtp.ssl.trust">smtp.naver.com</beans:prop>
+                <beans:prop key="mail.smtp.starttls.enable">true</beans:prop>
+                <beans:prop key="mail.smtp.auth">true</beans:prop>
+            </beans:props>
+        </beans:property>
+    </beans:bean>
+   
+ 
+/////////////   
+9. service > 4개의 시큐리티 java 소스 추가
+
+9-0) dto에 UserVO 추가
+package spring.mvc.pj_117.dto;
+
+import java.util.Collection;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+
+public class UserVO extends User {
+
+	public UserVO(String username, String password, boolean enabled, boolean accountNonExpired,
+			boolean credentialsNonExpired, boolean accountNonLocked,
+			Collection<? extends GrantedAuthority> authorities) {
+		super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);	
+	}
+
+}
+
+
+9-1) UserAuthenticationService.java
+
+   // 자바
+   // 로그인 인증처리 클래스 (/login_action.do에 의해 loadUserByUsername 메서드가 자동호출)
+public class UserAuthenticationService implements UserDetailsService {
+   
+   @Autowired
+   SqlSessionTemplate sqlSession;
+   
+   //security-context.xml에서 매개변수 생성자 sqlSession 생성 후 매개변수로 전달
+   public UserAuthenticationService(SqlSessionTemplate sqlSession) {
+      this.sqlSession = sqlSession;
+   }
+   
+   /* 핵심코드
+    * 로그인 인증을 처리하는 메서드
+    * 1) 매개변수 username을 id로 수정
+    * 2) 매개변수로 전달된 아이디와 일치하는 레코드를 읽어온다.
+    * 3) 테이블의 암호화된 비밀번호와 사용자가 입력한 비밀번호를 내부적으로 비교처리
+    * 4) 정보가 없으면 예외처리를 발생시키고, 있으면 해당정보를 dto로 리턴한다.
+    * 
+    */
+
+   @Override
+   public UserDetails loadUserByUsername(String id) throws UsernameNotFoundException {
+      System.out.println("<<<UserAuthenticationService - loadUserByUsername 진입 >>>");
+      
+      CustomerDTO dto = sqlSession.selectOne("spring.mvc.pj_117.dao.CustomerDAO.selectCustomer", id);
+      System.out.println("로그인 체크 ==>" + dto);
+      
+      // 로그인인증 실패시 인위적으로 예외 생성해서 던진다.
+      if(dto == null) throw new UsernameNotFoundException(id);
+      
+      List<GrantedAuthority> authority = new ArrayList<GrantedAuthority>();
+      
+      authority.add(new SimpleGrantedAuthority(dto.getAuthority()));  // default 'ROLE_USER'
+
+      // UserVO 클래스 먼저 생성후 return
+      // 시큐리티 로그인에서 체크 : id, password, authority(ROLE_USER / ROLE_ADMIN), enabled(이메일인증시 "1"로 update치며, 이메일인증후 시큐리티 적용)
+      return new UserVO(dto.getId(), dto.getPassword(), dto.getEnabled().equals("1"),
+            true, true, true, authority);
+   }
+
+}
+   
+   // 매퍼
+   
+   <!-- 시큐리티 - 로그인 인증시 호출 -->
+    <!-- UserAuthenticationService - loadUserByUsername에서 호출 -->
+    <select id="selectCustomer" parameterType="String" resultType="spring.mvc.pj_117.dto.CustomerDTO">
+       SELECT * FROM mvc_customer_tbl WHERE id=#{id}
+    </select>
+    
+
+9-2) UserDeniedHandler.java
+
+// 접근 권한이 없는 경우 작동
+public class UserDeniedHandler implements AccessDeniedHandler {
+
+   @Override
+   public void handle(HttpServletRequest request, HttpServletResponse response,
+         AccessDeniedException accessDeniedException) throws IOException, ServletException {
+
+      System.out.println("<<< UserDeniedHandler - handle 진입 >>>");
+      System.out.println("sessionId : " + request.getSession().getAttribute("customerID"));
+      
+      request.setAttribute("errMsg", "관리자만 접근할 수 있는 페이지입니다.");
+      
+      RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/common/accessDenied.jsp");
+      dispatcher.forward(request, response);
+   }
+   
+}
+
+// accessDenied.jsp - ${errMsg} 추가
+<body>
+<div class="wrap">
+   <%@ include file="/WEB-INF/views/common/header.jsp" %>   
+   
+   <div id="container">
+      <div id="contents" style="text-align: center">
+         <h1>관리자 페이지</h1>
+         <br>
+         
+         <!-- UserDeniedHandler에서  errMsg 전달 -->
+         <p style="font-size: 18px">${errMsg}</p> <br>
+         
+         <c:if test="${sessionScope.customerID !=null}">
+            <button value="이동하기" class="inputButton" style="width:200px; font-size:24px; text-align: center;"
+               onclick="window.location='logout.do'">이동하기</button>
+         </c:if>
+         <c:if test="${sessionScope.customerID == null}">
+            <button value="이동하기" class="inputButton" style="width:200px; font-size:24px; text-align: center;"
+               onclick="window.location='login.do'">이동하기</button>
+         </c:if>
+      </div>
+   </div>
+</div>
+
+   <%@ include file="/WEB-INF/views/common/footer.jsp" %>
+</body>
+</html>
+
+
+
+9-3) UserLoginSuccessHandler.java
+
+//9-3-1) 자바
+// 로그인 성공시 작동 
+public class UserLoginSuccessHandler implements AuthenticationSuccessHandler {
+
+   @Autowired
+   SqlSessionTemplate sqlSession;
+   
+   //security-context.xml에서 매개변수 생성자 sqlSession 생성 후 매개변수로 전달
+   public UserLoginSuccessHandler(SqlSessionTemplate sqlSession) {
+      this.sqlSession = sqlSession;
+   }
+   
+   @Override
+   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+         Authentication authentication) throws IOException, ServletException {
+      System.out.println("<<< UserLoginSuccessHandler - onAuthenticationSuccess 진입 >>>");
+      
+      UserVO vo = (UserVO) authentication.getPrincipal();
+      System.out.println("UserVO : " + vo.getUsername());
+      
+      String msg = authentication.getName() + "님 환영합니다.";
+      
+      String authority = sqlSession.selectOne("spring.mvc.pj_117.dao.CustomerDAO.authorityCheck", authentication.getName());
+      
+      request.setAttribute("msg", msg);
+      request.getSession().setAttribute("customerID", authentication.getName());  // 세션추가
+      request.getSession().setAttribute("authority", authority);
+      
+      int grade = 0;
+      if(authority.equals("ROLE_USER")) {
+         grade = 1;
+         RequestDispatcher dispatcher = request.getRequestDispatcher("/main.do");
+         dispatcher.forward(request, response);
+      } else {
+         grade = 0;
+         RequestDispatcher dispatcher = request.getRequestDispatcher("/productList.st");
+         dispatcher.forward(request, response);
+      }
+      
+   }
+
+}
+
+
+// 9-3-2) 매퍼
+   <!-- 시큐리티 - UserLoginSuccessHandler에서 호출 -->
+    <select id="authorityCheck" resultType="String">
+       SELECT authority FROM mvc_customer_tbl WHERE id=#{id}
+    </select>
+    
+// 9-3-3) security-context.xml - sqlSession 주석해제할 것
+   <!-- 로그인 성공시 작동 -->
+   <bean id="userLoginSuccessHandler" class="spring.mvc.pj_117.service.UserLoginSuccessHandler">
+      <!-- <constructor-arg name="sqlSession" ref="sqlSession" /> -->
+   </bean>    
+    
+
+// 9-3-4) jsp
+
+main.jsp - header아래에 추가
+   <!-- UserLoginSuccessHandler 에서 msg 넘김 -->
+   <c:if test="${msg != null}">
+      <script type="text/javascript">
+         alert("${msg}");
+      </script>
+   </c:if>
+
+productList.jsp - header아래에 추가
+
+   <!-- UserLoginSuccessHandler 에서 msg 넘김 -->
+   <c:if test="${msg != null}">
+      <script type="text/javascript">
+         alert("${msg}");
+      </script>
+   </c:if>
+
+
+9-4) UserLoginFailureHandler.java
+9-4-1) 자바
+// 로그인 실패시 작동 
+public class UserLoginFailureHandler implements AuthenticationFailureHandler {
+
+   @Autowired
+   SqlSessionTemplate sqlSession;
+   
+   @Autowired
+   BCryptPasswordEncoder passwordEncoder;   // 비밀번호 암호화 클래스
+   
+   //security-context.xml에서 매개변수 생성자 생성 후 매개변수로 전달
+   public UserLoginFailureHandler(SqlSessionTemplate sqlSession, BCryptPasswordEncoder passwordEncoder) {
+      this.sqlSession = sqlSession;
+      this.passwordEncoder = passwordEncoder;
+   }
+   
+   // 로그인이 실패할 경우 자동으로 실행하는 코드
+   @Override
+   public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+         AuthenticationException exception) throws IOException, ServletException {
+
+      System.out.println("<<< UserLoginFailureHandler - onAuthenticationFailure 진입 >>>");
+      
+      String strId = request.getParameter("id");
+      String strPwd = request.getParameter("password");
+      
+      int cnt = sqlSession.selectOne("spring.mvc.pj_117.dao.CustomerDAO.idCheck", strId);
+      if(cnt != 0) {
+         // 암호화된 비밀번호 가져오기
+         String encryptPassword = sqlSession.selectOne("spring.mvc.pj_117.dao.CustomerDAO.pwdCheck", strId);
+         System.out.println("암호화된 비밀번호 : " + encryptPassword);
+         System.out.println("화면에서 입력받은 비밀번호 : " + strPwd);
+
+         // 입력한 비밀번호와 가입된 비밀번호(암호화된 비밀번호)가 일치하는지 여부
+         if(passwordEncoder.matches(strPwd, encryptPassword)) {
+            System.out.println("<<< 이메일 인증 >>>");
+            request.setAttribute("errorMsg", "이메일 인증하세요.!!");
+         } else {
+            System.out.println("<<< 비밀번호 불일치 >>>");
+            request.setAttribute("errorMsg", "비밀번호가 일치하지 않습니다.!!");
+         }
+         
+      } else {
+         System.out.println("아이디 불일치");
+         request.setAttribute("errorMsg", "아이디가 일치하지 않습니다.");
+      }
+      
+      RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/customer/login/login.jsp");
+      dispatcher.forward(request, response);
+      
+   }
+
+}
+
+
+9-4-2) security-context.xml - sqlSession, passwordEncoder 주석해제할 것
+   <!-- 로그인 실패시 작동 -->
+   <bean id="userLoginFailureHandler" class="spring.mvc.pj_117.service.UserLoginFailureHandler">
+      <!-- 
+      <constructor-arg name="sqlSession" ref="sqlSession" />
+      <constructor-arg name="passwordEncoder" ref="bcryptPasswordEncoder" /> 
+      -->
+   </bean>
+
+
+9-4-3) 매퍼
+   <!-- 시큐리티 - UserLoginFailureHandler에서 호출 -->
+    <select id="pwdCheck" parameterType="String" resultType="String">
+       SELECT password FROM mvc_customer_tbl WHERE id=#{strId}
+    </select>
+
+9-4-4) login.jsp 
+- login.jsp - errorMsg 추가
+
+<!-- UserLoginFailureHandler 에서 msg 넘김 -->
+   <c:if test="${errorMsg != null}">
+      <script type="text/javascript">
+         alert("${errorMsg}");
+      </script>
+   </c:if>
+   
+- login.jsp - csrf 추가
+<!-- 주의 : method="post" 추가할 것, get방식일 경우 _csrf값이 url 뒤에 붙어버리므로 -->
+<form name="loginform" action="${path}/login_check.do" method="post" onsubmit="return loginCheck();">
+<!--  method="post" 반드시 추가 -->
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+
+
+
+9-5) CustomerContoller.java : 로그인 처리 
+
+loginAction.do 주석처리 => 시큐리티에서 처리하므로
+// login_check.do => 시큐리티에서 처리하므로 구현불필요, login.jsp에서 추가 => action="${path}/login_check.do"
+
+// 로그인 처리
+//   @RequestMapping("loginAction.do")
+//   public String loginAction(HttpServletRequest req, Model model) {
+//      logger.info("[url ==> loginAction.do]");
+//      
+//      service.loginAction(req, model);
+//      return "customer/login/loginAction";
+//   }
+   
+------------------------
+   
+10. CustomerDTO.java 에 테이블변경에 따른 멤버변수, setter getter 추가   
+   public class CustomerDTO {
+   
+      private String id;
+      private String password;
+      private String name;
+      private Date birthday;
+       private String address;
+       private String hp;
+       private String email;
+       private Timestamp regDate;
+       // 추가 - 시큐리티
+       private String key;   // 이메일인증
+       private String authority;  // 권한등급 : ROLE_USER:customer, ROLE_ADMIN:관리자
+       private String enabled;  // 계정사용 가능여부(1:사용가능, 0:사용불가) : 이메일인증시 1로 update
+       
+    }
+
+
+
+///////////// 회원 가입 - 시큐리티 /////////////////////////////
+
+11. 이메일 인증 소스
+11-1. [spring.mvc.pj_117.util.EmailChkHandler.java]
+
+package spring.mvc.pj_117.util;
+
+import java.util.Random;
+
+public class EmailChkHandler {
+
+   public static String getKey() {
+      // 인증키 부분(랜덤 문자)
+      StringBuffer temp = new StringBuffer();
+      Random rnd = new Random();
+      for(int i=0; i<6; i++) {
+         int rIndex = rnd.nextInt(2);
+         switch(rIndex) {
+         case 0 :
+            // A-Z
+            temp.append((char) ((int) (rnd.nextInt(26)) + 65));
+            break;
+         case 1:
+            // 0-9
+            temp.append((rnd.nextInt(10)));
+            break;
+         }
+      }
+      
+      return temp.toString();
+   }
+   
+}
+
+11-2. [spring.mvc.pj_117.util.SettingValues.java]
+
+package spring.mvc.pj_117.util;
+
+public interface SettingValues {
+   public static String ADMIN = "xxx";  // 본인 네이버 계정
+   public static String PW = "xxx";  // 본인 네이버 패스워드   
+}     
+
+12. CustomerServiceImpl.java
+
+   // 비밀번호 암호화 클래스
+   @Autowired
+   BCryptPasswordEncoder passwordEncoder;
+   
+   
+   // 회원가입 처리
+   @Override
+   public void signInAction(HttpServletRequest req, Model model) {
+   
+      // 비밀번호 암호화 - 시큐리티
+      String password = req.getParameter("password");
+      System.out.println("암호화 전의 비밀번호 : " + password);    
+      
+      // BCryptPasswordEncoder.encode() : 비밀번호 암호화 메서드
+      String encryptPassword = passwordEncoder.encode(password);
+      System.out.println("암호화 후의 비밀번호 : " + encryptPassword);
+      
+      dto.setPassword(encryptPassword);   // setPassword(암호화된 비밀번호); 
+      .....
+      // 시큐리티
+      String key = EmailChkHandler.getKey();
+      dto.setKey(key);
+      
+      ..
+      // 시큐리티
+      // 시큐리티 - 가입성공시 이메일인증을 위해 이메일 전송
+      if(insertCnt == 1) {
+         dao.sendEmail(email, key);   // email은 반드시 가입한 구글계정 이메일   
+      }
+       
+   
+   }
+
+
+13. CustomerDAO / CustomerDAOImpl.java
+
+	// 시큐리티 - 가입성공시 이메일인증을 위해 이메일 전송 (네이버)
+	@Override
+	public void sendEmail(String email, String key) {
+
+		final String username = SettingValues.ADMIN; // 네이버 이메일 ID : @naver.com은 입력하지 않는다.
+		final String password = SettingValues.PW; // 네이버 비밀번호 :
+		final String host = "smtp.naver.com"; // Google일 경우 smtp.gmail.com
+		int port = 465; // 포트번호
+
+		// 메일 내용
+		String recipient = "본인 네이버 이메일"; // 받는 사람의 메일주소를 입력해주세요.
+		String subject = "회원가입 인증 메일"; // 메일 제목 입력해주세요.
+
+		String content = "회원가입을 축하드립니다. 링크를 눌러 회원가입을 완료하세요." + "<a href='http://localhost/pj_117/emailChkAction.do?key="
+				+ key + "'>링크</a>";
+
+		Properties props = System.getProperties();
+
+		// 정보를 담기 위한 객체 생성
+		// SMTP 서버 정보 설정
+		props.put("mail.smtp.host", host);
+		props.put("mail.smtp.port", port);
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.ssl.enable", "true");
+		props.put("mail.smtp.ssl.trust", host);
+
+		// Session 생성
+		Session session = Session.getDefaultInstance(props, new javax.mail.Authenticator() {
+			String un = username;
+			String pw = password;
+
+			protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
+				return new javax.mail.PasswordAuthentication(un, pw);
+			}
+		});
+		session.setDebug(true); // for debug
+
+		try {
+			Message mimeMessage = new MimeMessage(session); // MimeMessage 생성
+			mimeMessage.setFrom(new InternetAddress("xxx@naver.com")); // 발신자 셋팅 , 보내는 사람의 이메일주소를 한번 더 입력합니다. 이때는 이메일 풀
+																		// 주소를 다 작성해주세요.
+			mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient)); // 수신자셋팅
+			mimeMessage.setSubject(subject); // 제목셋팅
+			// mimeMessage.setText(body); //내용셋팅
+			mimeMessage.setContent(content, "text/html; charset=utf-8");
+			Transport.send(mimeMessage); // javax.mail.Transport.send() 이용
+			System.out.println("<<<< Email SEND >>>>");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+   
+ 
+14-1.  CustomerController.java
+   // 시큐리티 - 가입성공시 이메일인증을 위해 이메일 인증 후 enabled 권한을 1로 update
+   // CustomerDAOImpl의 sendEmail(String email, String key)에서 호출
+   @RequestMapping("emailChkAction.do")
+   public String emailChk(HttpServletRequest req,  Model model) {
+      logger.info("[url ==> emailChkAction.do]");
+      
+      service.emailChkAction(req, model);
+      return "customer/join/emailChkAction";
+   }     
+      
+   
+14-2. CustomerDAO.java
+   // 시큐리티 : 로그인 전 이메일 인증을 해야 하며, 1로 수정
+   // 시큐리티
+   public int selectKey(String key);
+   
+   // 시큐리티
+   public int updateGrade(String key);
+   
+   
+14-3. CustomerDAOImpl.java
+   
+   // 시큐리티 : 로그인 전 이메일 인증을 해야 한다.
+   @Override
+   public int selectKey(String key) {
+      int selectCnt = sqlSession.selectOne("spring.mvc.pj_117.dao.CustomerDAO.selectKey", key);   
+      return selectCnt;
+   }
+      
+   // 시큐리티 : 로그인 전 이메일 인증을 해야 하며, 1로 수정
+   @Override
+   public int updateGrade(String key) {
+      int updateCnt = sqlSession.update("spring.mvc.pj_117.dao.CustomerDAO.updateGrade", key);   
+      return updateCnt;
+   }
+   
+14-4. 매퍼
+   <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 한다. -->
+    <select id="selectKey" parameterType="String" resultType="int">
+       SELECT COUNT(*) FROM mvc_customer_tbl WHERE key=#{key}
+    </select>
+    
+    <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 하며, 1로 수정-->
+    <update id="updateGrade" parameterType="String">
+      UPDATE mvc_customer_tbl
+         SET enabled=1
+        WHERE key=#{key}
+    </update>
+
+
+14-5.CustomerService.java - emailChkAction() 추가
+
+   // 이메일 인증 후 권한(enabled) update - 시큐리티
+   public void emailChkAction(HttpServletRequest req, Model model);
+   
+   
+14-6.CustomerServiceImpl.java - emailChkAction() 구현
+ 	// 이메일 인증 후 권한(enabled) update - 시큐리티
+   	public void emailChkAction(HttpServletRequest req, Model model) {
+      
+      String key = req.getParameter("key");
+      int selectCnt = dao.selectKey(key);
+      
+      if(selectCnt == 1) {
+         int insertCnt = dao.updateGrade(key);
+         model.addAttribute("insertCnt", insertCnt);
+      }
+   }
+
+
+
+
+
+   
+      
+   
+15. WEB-INF/views/customer/join/emailChkAction.jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ include file="/WEB-INF/views/common/setting.jsp" %>    
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- 반응형웹 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>중복확인 페이지</title>
+<link rel="stylesheet" href="${path}/resources/css/customerCss/confirmIdAction.css">
+<script src="${path}/resources/js/customerJS/errorMsg.js"></script>
+
+</head>
+<body>
+   <c:if test="${insertCnt == 0}">
+      <script type="text/javascript">
+         errorAlert("이메일 인증 실패!!");
+         window.location="login.do";
+      </script>
+   </c:if>
+   
+   <c:if test="${insertCnt != 0}">
+      <script type="text/javascript">
+         errorAlert("이메일 인증 성공!!");
+         window.location="login.do";
+      </script>
+   </c:if>
+</body>
+</html>
+
+   
+16. customerMapper.xml
+
+    <!-- 회원가입 처리 -->  <!-- 시큐리티 : key 컬럼 추가 -->
+    <insert id="insertCustomer" parameterType="spring.mvc.pj_117.dto.CustomerDTO">
+      INSERT INTO mvc_customer_tbl(id, password, name, birthday, address, hp, email, regDate, key)
+      VALUES(#{id}, #{password}, #{name}, #{birthday}, #{address}, #{hp}, #{email}, #{regDate}, #{key})
+    </insert>   
+    
+    
+17. join.jsp
+
+<!-- 주의 : method="post" 추가할 것, get방식일 경우 _csrf값이 url 뒤에 붙어버리므로 -->
+<form name="joinform" action="${path}/joinAction.do" method="post" onsubmit="return signInCheck();">
+<!-- 각 jsp의 form 태그 아래에  _csrf 지정을 안하면 권한 에러발생시커 관리자 페이지로 이동하도록 함 -->
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+
+login.jsp에도 추가했는지 확인 > 다른 form이 있는 jsp에도 추가해야한다                          
+//////////////////
+
+18. WEB-INF/views/common/header.jsp
+
+		<ul class="navbar_icons">
+			<li><i class="fa fa-twitter"></i></li>
+			<li><i class="fa fa-facebook"></i></li>
+			<!-- 로그인 안한 경우 -->
+			<c:if test="${sessionScope.customerID == null }">
+				<li><a href="${path}/login.do">LOGIN</a></li>
+				<li><a href="${path}/join.do">JOIN</a></li>
+				<li><a href="${path}/login.do"><i class="fa fa-cart-plus"></i></a></li>
+				<li><a href="${path}/login.do"><i class="fa fa-user"></i></a></li>
+			</c:if>
+			<!-- 로그인 한 경우 -->
+			<c:if test="${sessionScope.customerID != null }">
+				<li><span style="color: pink">${sessionScope.customerID}</span>님 환영합니다</li>
+				<li><a href="${path}/logout.do">LOGOUT</a></li>
+				<li><a href="${path}/cartList.do"><i class="fa fa-cart-plus"></i></a></li>
+				<li><a href="${path}/mypage.do"><i class="fa fa-user"></i></a></li>
+			</c:if>
+		</ul>
+
+
+19. 관리자 테스트 : admin의 권한을 'ROLE_ADMIN'으로 수정후 관리자로 로그인
+UPDATE mvc_customer_tbl
+  SET authority='ROLE_ADMIN'
+ WHERE id='admin'; 
+COMMIT;
+
+
+=====================  [ 회원가입 / 로그인 완료 ] ==================================
+
+=====================  [ 회원 수정 ] ==================================
+
+20. [header.jsp] => 수정버튼 클릭시 [modifyDetailAction.do]로 이동
+
+<!-- 로그인 안한경우 -->
+<c:if test="${sessionScope.customerID == null}">  
+   <li><a href="${path}/login.do">LOGIN</a></li>
+   <li><a href="${path}/join.do">JOIN</a></li>
+   <li><a href="${path}/login.do"><i class="fas fa-cart-plus"></i></a></li><!-- 회원수정 - 상세페이지 -->
+   <li><a href="${path}/login.do"><i class="fas fa-user-alt"></i></a></li>   <!-- 회원탈퇴 처리 -->      
+</c:if>
+
+<!-- 로그인 한경우 -->         
+<c:if test="${sessionScope.customerID != null}">
+   <li><span style="color:pink">${sessionScope.customerID}</span>님 환영합니다.</li>
+   <li><a href="${path}/logout.do">LOGOUT</a></li>
+   <li><a href="${path}/modifyDetailAction.do"><i class="fas fa-cart-plus"></i></a></li><!-- 회원수정 - 상세페이지 -->
+   <li><a href="${path}/deleteCustomerAction.do"><i class="fas fa-user-alt"></i></a></li>   <!-- 회원탈퇴 처리 -->      
+</c:if>
+
+// 회원수정 - 인증화면
+21. [modifyCustomer.do"] => 주석처리
+
+22. [modifyDetailAction.do]
+
+   [CustomerServiceImpl] - modifyDetailAction 수정
+// 회원정보 인증 및 상세페이지
+   @Override
+   public void modifyDetailAction(HttpServletRequest req, Model model) {
+      // 3단계. 화면으로부터 입력받은 값을 받는다.
+      String strId = (String)req.getSession().getAttribute("customerID");   // 세션ID
+      
+      CustomerDTO dto = dao.getCustomerDetail(strId);
+      System.out.println("서비스 dto :" + dto);
+      
+      // 6단계. jsp로 처리 결과 전달(request나 session으로 처리 결과를 저장 후 전달)
+      model.addAttribute("dto", dto);
+   }   
+   
+   [ modifyDetailAction.jsp]
+
+   1) csrf 추가
+   <!-- 각 jsp의 form태그 아래에  _csrf 지정을 안하면 권한 에러발생시커 관리자 페이지로 이동하도록 함 -->
+   <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+      
+   2) selectCnt 주석처리
+      <%-- <c:if test="${selectCnt == 1}"> --%>
+      <%-- </c:if> --%>
+      
+      <%-- <c:if test="${selectCnt != 1}">
+      <script type="text/javascript">
+         errorAlert(passwordError);
+      </script>
+   </c:if>    --%>   
+   
+   3) 비밀번호, 비밀번호 확인 => value 값 주석처리 => 암호화된 비밀번호가 화면에 뿌려지는데, 이것을 수정안할 경우, 암호화된 비밀번호가 또한번 암호화되어 비밀번호 불일치현상이 일어난다.
+   <tr>
+      <th> * 비밀번호 </th>
+         <%-- <td colspan="2"> <input type="password" class="input" name="password" size="15" value="${dto.getPassword()}" required  placeholder="공백없이 15자 이내로 작성"> </td> --%>
+         <td colspan="2"> <input type="password" class="input" name="password" size="15" required  placeholder="공백없이 15자 이내로 작성"> </td>
+      </tr>
+      <tr>
+         <th> * 비밀번호(확인) </th>
+         <%-- <td colspan="2"> <input type="password" class="input" name="repassword" size="15" value="${dto.getPassword()}" required placeholder="비밀번호 확인"> </td> --%>
+         <td colspan="2"> <input type="password" class="input" name="repassword" size="15" required placeholder="비밀번호 확인"> </td>
+      </tr>
+      
+   4) modifyCustomerAction.do > 서비스 => 비밀번호 암호화 추가
+   
+   // 회원정보 인증 및 상세페이지
+   @Override
+   public void modifyDetailAction(HttpServletRequest req, Model model) {
+   
+      // 비밀번호 암호화 
+      String password = req.getParameter("password");
+      System.out.println("암호화 전의 비밀번호 : " + password);
+      
+      String encryptPassword = passwordEncoder.encode(password);
+      System.out.println("암호화 후의 비밀번호 : " + encryptPassword);
+      
+      // 암호화된 비밀번호를 setter로 담는다.
+      dto.setPassword(encryptPassword);
+   }   
+   
+   실행 =>  로그인 후 회원수정 테스트
+   
+   -- park   $2a$10$WTAcpk7u1T3rIeshuw4v3ef1ZB.2r3x6vyUsNmu87/68kLwTWhV5a   박하나   22/03/01   서울시   010-1111-2222   psn2615@gmail.com   22/03/22 16:05:33.780000000   975AO9   ROLE_USER   1
+   
+=====================  [ 회원 탈퇴] ==================================   
+
+23.
+// 회원탈퇴 - 인증화면   
+ [ deleteCustomer.do ] => 주석처리
+ 
+24. deleteCustomerAction.do > deleteCustomerAction
+ 
+ // 회원정보 인증 및 탈퇴처리
+   @Override
+   public void deleteCustomerAction(HttpServletRequest req, Model model) {
+      // 3단계. 화면으로부터 입력받은 값을 받는다.
+      String strId = (String)req.getSession().getAttribute("customerID");   // 세션ID
+      
+      int deleteCnt = dao.deleteCustomer(strId);
+      System.out.println("deleteCnt : " + deleteCnt);
+      req.setAttribute("deleteCnt", deleteCnt);
+      
+25. deleteCustomerAction.jsp => selectCnt 주석처리      
+      
+ <%-- <c:if test="${selectCnt == 1}"> --%>
+ <%-- </c:if>  --%><!-- 아이디와 비밀번호 일치:1 -->
+
+<!-- 아이디와 비밀번호 불일치:0 -->   
+<%-- <c:if test="${selectCnt != 1}">   
+   <script type="text/javascript">
+      errorAlert(passwordError);
+   </script>
+</c:if>
+ --%>
+ 
+ 
+ 
+=====================  [ 회원 탈퇴 완료] ==================================
+
+[ 사용안하므로 삭제할 것 ]
+      컨트롤러 loginAction.do => 시큐리티 "/login_check.do"에서 처리하므로 사용안함
+   modifyCustomer.jsp
+   deleteCustomer.jsp
+   매퍼 idPasswordChk
+   
+   
+=====================  [ admin - 상품관리] ==================================
+   
+26. admin으로 회원가입 => admin의 권한을 'ROLE_ADMIN'으로 수정후 관리자로 로그인
+UPDATE mvc_customer_tbl
+  SET authority='ROLE_ADMIN'
+ WHERE id='admin'; 
+COMMIT;
+-- admin   $2a$10$9wFry7E4iokiUouMabYux.kWmbpjaAAtx2eJOknt3LnT8AznYVLBu   관리자   22/03/01   서울시 강남구   010-1111-1111   psn2615@gmail.com   22/03/22 18:00:34.480000000   1L3734   ROLE_ADMIN   1
+
+
+
+27. 상품목록 : UserLoginSuccessHandler
+   1) 관리자님 환영합니다. 메시지 출력   
+   2) if(authority.equals("ROLE_ADMIN"))  => /productList.st로 이동
+  
+28. 상품등록 : WEB-INF/views/manager/stock/productAdd.jsp - csrf 추가 > ?${_csrf.parameterName}=${_csrf.token}
+   <form action="${path}/productAddAction.st?${_csrf.parameterName}=${_csrf.token}" method="post" name="productAdd" enctype="multipart/form-data">
+   
+29. 상품수정 :   WEB-INF/views/manager/stock/productDetail.jsp - csrf 추가 > ?${_csrf.parameterName}=${_csrf.token}
+<form action="${path}/productUpdateAction.st?${_csrf.parameterName}=${_csrf.token}" method="post" name="form1" enctype="multipart/form-data">  
+   
+30. 상품삭제   : 그냥 실행
+
+   
+=====================  [ admin - 게시판관리] ==================================
+
+31. boardList.jsp - csrf 추가   
+
+32. boardInsert.jsp - csrf 추가
+<!-- 시큐리티 -->
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+
+33. board_detailAction.jsp - csrf 추가 
+
+   1) <form method="post" name="detailForm">
+                  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                  
+   2)               
+   // 수정/삭제화면으로 이동
+   $("#btnEdit").click(function() {
+      alert("상세페이지 - btnEdit")
+      document.detailForm.action="${path}/password_chk.bo?${_csrf.parameterName}=${_csrf.token}";
+      document.detailForm.submit();
+      
+   3)    
+   // 댓글쓰기 url에 ?${_csrf.parameterName}=${_csrf.token} 추가
+function comment_add(){
+	var param={
+		"board_num": ${dto.num},
+		"comment_writer": $('#comment_writer').val(),
+		"content": $('#content').val()
+	}
+	$.ajax({
+		url: "${path}/commentAdd.bo?${_csrf.parameterName}=${_csrf.token}",
+		type: "POST",
+		data: param,
+		success: function(){	
+			$('#comment_writer').val("");	
+			$('#content').val("");
+			comment_list();	
+		},
+		error: function(){
+			alert('comment_add 오류');
+			comment_list();
+		}
+	});
+} 
+   
+   4)
+   // 댓글목록 url에 ?${_csrf.parameterName}=${_csrf.token} 추가
+   function comment_list() {
+      alert("comment_list()");
+      $.ajax({
+         type: "post",
+         url: "${path}/commentList.bo?${_csrf.parameterName}=${_csrf.token}",
+         data: "num=${dto.num}",   /* mvc_board_tbl의 pk이며, 댓글테이블의 fk(board_num)과 비교 */
+         success: function(result) {  // result : commit_list.jsp(컨트롤러에서 forward)
+            $('#commentList').html(result);  
+         }, 
+         error: function() {
+            alert('comment_list 오류');
+         }
+      });
+
+
+33. board_edit.jsp - csrf 추가

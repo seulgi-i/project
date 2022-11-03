@@ -1,0 +1,70 @@
+@charset "UTF-8";
+
+
+/* join.css = login.css */
+.navbar{
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   justify-content :space-around; /* 시작과 끝은 기준선에 맞추고 사이사이 공백  */   
+   align-items:center;   /* 수평 가운데 정렬 */
+   background-color : linen;
+   opacity : 0.85;
+   padding : 8px 12px;
+   border-style : none;
+}
+
+.navbar_menu {
+   list-style : none;
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   font-size : 17px;
+   font-weight :bold;
+   padding : 0;
+   margin : 0;
+   margin-left: 80px;
+   }
+
+.navbar_menu li {
+   display : flex;
+   padding : 8px 30px;
+}
+
+.navbar_menu li:hover{/*마우스 갖다 올렸을 때*/
+   background-color : lightpink;
+   border-radius : 40px;
+}
+
+
+.navbar_icons {
+   list-style : none;
+   color : white;   
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   padding-right: -50px;
+   margin:0;
+}
+
+.navbar_icons li {
+   padding : 8px 15px;
+}
+
+
+.navbar_icons li:hover{/*마우스 갖다 올렸을 때*/
+   background-color : lightpink;
+   border-radius : 40px;
+}
+/*-------------------------------navbar 종료-------------------------------*/
+
+/* 반응형웹-2. 햄버거 아이콘을 맨 오른쪽에 배치*/
+
+/* 반응형웹-3. 미디어쿼리 */
+@media screen and (max-width:768px) {
+   
+ 
+   /* 3-2. 끝 */
+   
+   /* 3-3. 자바스크립트 이벤트 추가 : 햄버거 버튼을 클릭하면 아래쪽으로 메뉴가 나오도록 main.js에서 추가 */
+
+   /* 3-4. 각 페이지(html)마다 main.js를 추가 */
+   /* 3-5. active 추가 */
+   /* 메뉴가 보여지고 페이지이용 가능. 한번 더 누르면 메뉴가 감춰진다 */
+   .navbar_menu.active, .navbar_icons.active{
+      display : flex;
+   }

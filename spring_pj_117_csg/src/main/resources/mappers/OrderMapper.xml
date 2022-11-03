@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="spring.mvc.pj_117_csg.dao.OrderDAO">
+
+   <select id="orderPage" parameterType="java.util.Map" resultType="spring.mvc.pj_117_csg.dto.OrderDTO">
+     SELECT *  FROM mvc_customer_cart t
+    JOIN  mvc_product_tbl p ON t.pdNo = p.pdNo JOIN mvc_customer c ON t.id = c.id where t.pdNo=#{pdNo} AND t.id=#{id}
+   </select>
+	<!-- 주문갯수 -->
+	<select id="orderCnt" resultType="int">
+		SELECT COUNT(*) as cnt FROM mvc_order_tbl
+	</select>
+	 	
+	<!-- 주문요청 -->
+	<insert id="orderAdd" parameterType="spring.mvc.pj_117_csg.dto.OrderDTO">
+	    INSERT INTO mvc_order_tbl(id, orderNo, pdNo, cartNo, orderName, orderaddress, orderhp, orderCnt)
+		     VALUES(#{id},(SELECT NVL(MAX(orderNo) + 1, 1) FROM mvc_order_tbl), #{pdNo}, #{cartNo}, #{orderName},#{orderaddress},#{orderhp},#{orderCnt})
+   </insert>
+	
+	
+	<!-- 주문목록 -->
+	<select id="orderList" parameterType="String" resultType="spring.mvc.pj_117_csg.dto.OrderDTO">
+      SELECT *  FROM mvc_order_tbl o JOIN mvc_product_tbl p  ON o.pdNo = p.pdNo
+				JOIN mvc_customer c ON o.id = c.id
+			   WHERE o.id=#{id}
+	  ORDER BY DECODE(state,'주문요청',1,'주문승인',2,'구매확정',3,'환불요청', 4,'환불승인',5,'주문취소',6), orderdate DESC
+   </select>
+
+	<!-- 주문취소 -->
+	<delete id="cancelOrder" parameterType="int">
+      UPDATE mvc_order_tbl SET state='주문취소' WHERE orderNo=#{orderNo}
+     </delete>
+     
+     
+	<!-- 환불요청  -->
+	<update id="refundOrder" parameterType="int">
+      UPDATE mvc_order_tbl SET state='환불요청' WHERE orderNo=#{orderNo}
+     </update>
+     
+	<!-- 구매확정  -->
+	<update id="buyOrder" parameterType="int">
+      UPDATE mvc_order_tbl SET state='구매확정' WHERE orderNo=#{orderNo}
+     </update>
+     
+	<!-- 관리자컨펌목록 -->
+	<select id="adminConfirm" resultType="spring.mvc.pj_117_csg.dto.OrderDTO">
+	  SELECT * FROM MVC_ORDER_TBL o JOIN mvc_product_tbl p ON o.pdNo = p.pdNo 
+		      WHERE state LIKE '%요청' ORDER BY orderdate ASC
+	</select>
+	
+	<!-- 주문승인(관리자) - 재고감소 매출증가 -->
+	<update id="confirmOrder" >
+	  UPDATE mvc_order_tbl SET state='주문승인' WHERE state='주문요청'
+	</update>
+	
+	<!-- 환불승인(관리자) - 재고증가 매출감소 -->
+	<update id="confirmRefund" >
+	  UPDATE mvc_order_tbl SET state='환불승인' WHERE state='환불요청'
+	</update>
+	
+	
+	<!-- 관리자 결산(구매확정 상품별 결산금액) -->
+	<select id="adminSoldView" resultType="spring.mvc.pj_117_csg.dto.OrderDTO">
+	  SELECT p.PDNO, p.pdImg, p.PDNAME, sum(o.ORDERCNT) as totalCnt, sum(p.PRICE * o.ORDERCNT) as totalMoney
+	    FROM mvc_product_tbl p 			
+	    JOIN mvc_order_tbl o 			
+	 	 ON o.pdNo = p.pdNo         	
+	    JOIN mvc_customer c 				 
+	      ON c.id = o.id 				 
+       WHERE o.STATE = '구매확정' 			 
+	   GROUP BY p.PDNO , p.PDNAME, p.pdImg
+	</select>
+</mapper>

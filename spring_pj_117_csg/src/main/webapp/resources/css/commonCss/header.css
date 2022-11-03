@@ -1,0 +1,225 @@
+@charset "UTF-8";
+
+.wrap{
+   margin : 0;
+   width : 100%;
+   height : auto;
+   min-height : 100%;
+   font-size: 13px;
+}
+
+
+a{
+   color : black;
+   text-decoration : none;
+}
+
+.d-flex {
+	margin-left:40px;
+}
+
+.offcanvas {
+    background-color: linen;
+}
+
+.offcanvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    margin-left: 30px;
+}
+.offcanvas-body {
+    flex-grow: 1;
+    padding: 4rem 3rem;
+    overflow-y: auto;
+}
+.btn-outline-success {
+    color: #e9a1a1;
+    border-color: #b1b1b1;
+}
+.btn-outline-success:hover {
+    background-color: #e9a1a1;
+    border-color: #e9a1a1;
+}
+.body_full {
+	 padding: 0 40px;
+}
+dt {
+	display: inline-block;
+    font-family: 'Zilla Slab',serif;
+    font-size: 21px;
+    line-height: 18px;
+    color: #a2a2a2;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #a2a2a2;
+    margin-bottom: 20px;
+}
+dl.line {
+    border-top: 1px solid #2c3b34;
+    padding-top: 50px;   
+}
+dl {
+    padding-bottom: 50px;
+}
+
+dl {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+}
+
+
+.btn_box{
+	display: block;
+    margin-inline-start: 40px;
+}
+
+.btn_box a {
+    float: left;
+    width: 120px;
+    height: 37px;
+    line-height: 34px;
+    font-family: 'Zilla Slab',serif;
+    color: #2c3b34;
+    font-size: 13px;
+    padding: 0 31px;
+    letter-spacing: 0.5px;
+    border: 1px solid #d9d9d9;
+    box-sizing: border-box;
+    border-radius: 30px;
+    margin-right: 72px;
+    margin-left: -41px;
+}
+
+.txt_box {
+    overflow: hidden;
+}
+.txt1 {
+    float: left;
+    font-family: 'Zilla Slab',serif;
+    color: #2c3b34;
+    font-size: 12px;
+    line-height: 17px;
+    letter-spacing: 0.5px;
+    text-transform: lowercase;
+}
+
+.txt2 {
+    display: inline-block;
+    padding-right: 5px;
+    font-size: 12px;
+    line-height: 12px;
+    color: #2c3b34;
+    padding-bottom: 11px;
+}
+.txt3 {
+    color: #2c3b34;
+    font-size: 12px;
+    line-height: 12px;
+    padding-top: 2px;
+}
+.num1 {
+	float: left;
+    width: 160px;
+    font-family: 'Work Sans',sans-serif;
+    color: #2c3b34;
+    font-size: 27px;
+    line-height: 36px;
+    letter-spacing: 1px;
+    font-weight: 300;
+}
+.num2 {
+    display: inline-block;
+    font-family: 'Work Sans',sans-serif;
+    color: #2c3b34;
+    font-size: 12px;
+    line-height: 14px;
+}
+.dropdown-item{
+	font-family:'Gowun_Batang',serif
+} 
+  
+/*-------------------------------navbar 시작-------------------------------*/
+.navbar{
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   justify-content :space-around; /* 시작과 끝은 기준선에 맞추고 사이사이 공백  */   
+   align-items:center;   /* 수평 가운데 정렬 */
+   background-color : linen;
+   opacity : 0.85;
+   padding : 8px 12px;
+   border-style : none;
+}
+.navbar_title {
+   list-style : none;
+   color : #fedeff;
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   padding-left : 10px;   
+}
+
+.navbar_menu {
+   list-style : none;
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   font-size : 17px;
+   font-weight :bold;
+   padding : 0;
+   margin : 0;
+   margin-left: 447px;
+   }
+
+.navbar_menu li {
+   display : flex;
+   padding : 8px 30px;
+}
+
+.navbar_menu li:hover{/*마우스 갖다 올렸을 때*/
+   background-color : lightpink;
+   border-radius : 40px;
+}
+
+.navbar_icons {
+   list-style : none;
+   color : black;   
+   display : flex; /* 한 줄 (수평)으로 배치 */ 
+   padding-right: -50px;
+   margin:0;
+}
+
+.navbar_icons li {
+   padding : 8px 15px;
+   color : black;
+}
+
+
+.navbar_icons li:hover{/*마우스 갖다 올렸을 때*/
+   background-color : lightpink;
+   border-radius : 40px;
+}
+/*-------------------------------navbar 종료-------------------------------*/
+
+/* 반응형웹-2. 햄버거 아이콘을 맨 오른쪽에 배치*/
+
+/* 반응형웹-3. 미디어쿼리 */
+@media screen and (max-width:768px) {
+   
+ 
+   /* 3-2. 끝 */
+   
+   /* 3-3. 자바스크립트 이벤트 추가 : 햄버거 버튼을 클릭하면 아래쪽으로 메뉴가 나오도록 main.js에서 추가 */
+
+   /* 3-4. 각 페이지(html)마다 main.js를 추가 */
+   /* 3-5. active 추가 */
+   /* 메뉴가 보여지고 페이지이용 가능. 한번 더 누르면 메뉴가 감춰진다 */
+   .navbar_menu.active, .navbar_icons.active{
+      display : flex;
+   }
+
+   /* 3-1 창을 줄이면 */
+   .navbar_toggleBtn {
+      display: block; /*블록이 세로로 보여주고, inline은 가로로 보여준다*/
+   }
+
+
+

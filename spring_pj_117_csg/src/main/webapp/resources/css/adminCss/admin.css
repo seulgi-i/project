@@ -1,0 +1,120 @@
+@charset "UTF-8";
+
+#container {
+    width: 100%;
+    margin: 0 auto;
+    height: 99%;
+    margin-top: 190px;
+}
+button, input, optgroup, select, textarea {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    background: linen;
+}
+
+#contents {
+   max-width: 1240px;
+   min-width: 1240px;
+   width: 100%;
+   margin: -53px auto;
+   min-height: 800px;
+}
+
+#section2 {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   color: black;
+}
+#section1 {
+	font-size:13px;
+	text-align:center;
+}
+
+<!-- 좌측 메뉴 시작 -->
+
+.product_menu li a {
+
+}
+#left {
+    width: 20%;
+    margin-top: -17px;
+    height: 10%;
+    border-radius: 10px;
+    margin-right: 55px;
+}
+.left_inside {
+    background: linen;
+    margin: 0 0 0 0;
+    border-radius: 10px;
+    /* padding: 10px 10px 10px 10px; */
+    box-shadow: 10px 10px 10px 10px rgb(0 0 0 / 20%);
+    text-align-last: center;
+}
+
+.menubarLeft {
+    margin-left: -25px;
+}
+.menubarLeft li {
+   list-style: none;
+   align: center;
+}
+
+
+.menubarLeft .nb:hover {
+	text-decoration : underline;
+}
+
+/* 우측 내용 시작 */ 
+#right {
+  width: 88%;
+}
+tbody, td, tfoot, th, thead, tr {
+    border-color: inherit;
+    border-style: solid;
+    border-width: 0;
+    border: 1px solid black;
+}
+.table_div {
+   margin-top: 50px;
+}
+
+.table_div table {
+   border-collapse: collapse;
+}
+
+.table_div table th, td {
+  height: 60px;
+   padding-left:10px;
+}
+
+.table_div table th {
+  background: transparent;
+}
+
+.inputButton {
+   background-color: dark-yellow;
+   font-size: 16px;
+   padding: 10px 15px 10px 15px;
+}
+
+input {
+   padding: 2px 2px;
+}
+
+.input {
+    width: 675px;
+    height: 40px;
+    border: 1px solid gray;
+    box-sizing: border-box;
+    padding: 0 0 0 10px;
+    background: transparent;
+}
+
+
+
+
+
+

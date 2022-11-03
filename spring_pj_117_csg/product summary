@@ -1,0 +1,565 @@
+ ** 에러 처리
+1-5동일
+
+   --spring-test
+   
+ 6. jsp의 ProductController open
+ 
+    
+    - 해당 경로에 Product 파일 복사해서 가져온다.    
+   	스프링 
+    ProductController 소스 만들고 작성
+    ProductService, ProductServiceImpl 복사해서 가져온다.
+    ProductrDTO 복사해서 가져온다.
+    ProductDAO, ProductDAOImpl 복사해서 가져온다.
+    
+    - jsp : common폴더 / customer 폴더 => 복사해서 views 폴더에 붙여넣는다.
+      jsp : resources => 복사해서 resources 폴더에 붙여넣는다.
+      
+ ==> 스프링으로 변환   (jsp는 경로만 수정, 백엔드(클래스는 어노테이션 처리, DAO는 마이바티스로 작성후 호출))  
+ 
+ 
+ 6-1)
+
+ @Controller
+public class ProductController {
+
+		private static final Logger logger = LoggerFactory.getLogger(CustomerController.class);
+	
+	@Autowired
+	ProductServiceImpl service;
+ // -------[상품관리]---------
+     // 상품목록
+	@RequestMapping("productList.st")
+	public String productList() {
+			logger.info("[url => productList.st]");
+		
+			return "admin/stock/productLis";
+	
+	}
+	 
+	@Service
+	public class ProductServiceImpl implements ProductService {
+
+	@Autowired
+	ProductDAO dao;
+	
+	@Repository
+public class ProductDAOImpl implements ProductDAO{
+	@Autowired
+	SqlSession sqlSession;
+----------------   
+   
+   
+=>    실행  http://localhost/pj_117/productList.st   => 정상 실행
+    * CustomerController_old.java는 삭제 => 컴파일 오류
+    
+
+   6-2) join.do
+   
+      컨트롤러
+   
+   
+   ********
+   6-4) src/main/resources/dataSource-config.xml 작성
+       => 동일
+      
+      --------
+   
+   6-5) DAOImpl에 sqlSession 추가
+   
+	실행 : productList.st ->  동일   
+   
+   6-6) 마이바티스 매퍼 파일 작성
+   
+동일   
+   
+-------------------------------------------------------------------------------------------
+[상품목록]   
+   
+   컨트롤러 > 상품목록
+   서비스 >    상품목록
+   DAO > 상품목록
+   mapper 상품목록
+   DAOImpl > 상품목록
+
+[등록, 수정, 삭제] 동일
+    
+ -------------------------------------------------------------------------------------------   
+   1~5까지, 6-1, 6-2 customer와 동일
+
+
+///////// 에러
+
+java.sql.SQLException: Cannot load JDBC driver class 'oracle.jdbc.driver.OracleDriver'
+==> C:\Program Files\Java\jre1.8.0_241\lib\ext\ojdbc6.jar 붙여넣는다.
+
+insert문장 regDate 오류 
+=> 서비스 : dto.setRegDate(new Timestamp(System.currentTimeMillis()));
+=> mapper에서 sysdate로 주거나 아예 regDate를 빼거나
+
+
+HomeController.java가 작동안되면 플젝 새로 생성
+
+javaScript 캐쉬가 먹으면 강력 새로고침 또는 이클립스 껐다 키기
+
+///////////////////
+
+
+1. 커넥션풀 추가
+
+ <Resource author="Container" 
+     driverClassName="oracle.jdbc.driver.OracleDriver" 
+     maxActive="5" maxWait="1000" 
+     name="jdbc/jsp_pj_117" 
+     password="tiger"
+     type="javax.sql.DataSource" 
+     url="jdbc:oracle:thin:@localhost:1521:xe" 
+     username="jsp_pj_117"/>
+     
+-----------------------------------------------------     
+2. 플젝 생성 : NEW > Spring Legacy Project > 프로젝트명 입력 > Spring MVC Project 선택 > 패키지(3레벨이상) 입력 : spring.mvc.pj_117
+  => 패키지(3레벨이상) 입력해야 하며, 3레벨이 컨텍스트명(pj_117)이 된다. 
+  
+=> 테스트 => http://localhost/
+   home.jsp 실행
+   Hello world!
+
+1) 자바 설정
+   
+   - project 우클릭 > properties > Project Facets > java를 1.8로 변경
+   Runtimes 탭에서 Apache Tomcat v8.5 클릭 > Apply 버튼
+   
+   - project 우클릭 > properties > Java Build Path > Library 탭 > jre System library 선택후 Edit 선택 / 또는 jre System library 더블클릭
+   > 세번째 workspace default JRE(jre1.8.0_xxx) 선택
+   
+   - java compiler - 1.8버전 확인
+   
+2) pom.xml에 버전 반영
+   <properties>
+      <java-version>1.8</java-version>
+      <org.springframework-version>5.1.8.RELEASE</org.springframework-version>      
+      
+3) 실행 : 
+   http://localhost/pj_117/
+   => http://localhost/세번째 패키지명/
+   
+-----------------------------------------------------   
+3. 패키지 생성
+
+   spring.mvc.pj_117.controller
+   spring.mvc.pj_117.service
+   spring.mvc.pj_117.dao
+   spring.mvc.pj_117.dto
+
+-----------------------------------------------------   
+4. web.xml 맨 아래에 한글 안깨지도록 추가
+
+   <!-- 한글 안깨지게 처리 시작 -->
+   <filter>
+      <filter-name>encodingFilter</filter-name>
+      <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+      
+      <init-param>
+         <param-name>encoding</param-name>
+         <param-value>UTF-8</param-value>
+      </init-param>   
+      
+      <init-param>
+         <param-name>forceEncoding</param-name>
+         <param-value>true</param-value>
+      </init-param>
+   </filter>
+   
+   <filter-mapping>
+      <filter-name>encodingFilter</filter-name>
+      <url-pattern>/*</url-pattern>
+   </filter-mapping>
+   <!-- 한글 안깨지게 처리 종료 -->
+
+확인 => http://localhost/pj_117/
+   Hello world!
+   The time on the server is 2022년 3월 8일 (화) 오전 11시 02분 52초.
+   
+-----------------------------------------------------   
+5. pom.xml에 Mybatis.jar 파일 설정
+   
+   mvnrepository.com에서 4개의 라이브러리를 복사후 pom.xml에 등록하면
+   maven 중앙 repository(저장소)로부터 다운로드 후 빌드되어 Maven Dependencies(.m2.repository)에 저장된다.
+   
+    <!-- Mybatis 설정 시작 -->
+   <dependency>
+       <groupId>org.mybatis</groupId>
+       <artifactId>mybatis-spring</artifactId>
+       <version>1.3.2</version>
+   </dependency>
+      
+   <dependency>
+       <groupId>org.mybatis</groupId>
+       <artifactId>mybatis</artifactId>
+       <version>3.4.6</version>
+   </dependency>
+   
+   <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-jdbc</artifactId>
+       <version>5.1.8.RELEASE</version>
+   </dependency>
+   <!-- Mybatis 설정 끝 -->
+   
+   --spring-test
+   
+------------------------------------------------------------------------------   
+ 6. jsp의 StockController 소스 open
+    
+    - 해당 경로에 Stock 파일 복사해서 가져온다.    
+    StockController 소스 만들고 작성
+    StockService,StockServiceImpl 복사해서 가져온다.
+    StockDTO 복사해서 가져온다.
+    StockDAO, StockDAOImpl 복사해서 가져온다.
+    
+    - jsp는 안한 경우에만 작업
+    - jsp : common / manager  => 복사해서 views 폴더에 붙여넣는다.(안한경우)
+      jsp : resources => 복사해서 resources 폴더에 붙여넣는다.(안한경우)
+      
+ ==> 스프링으로 변환   (jsp는 경로만 수정, 백엔드(클래스는 어노테이션 처리, DAO는 마이바티스로 작성후 호출))  
+ 
+ 
+ 6-1)  JSP  => 경로 수정  : /WEB-INF/views 추가
+   
+   <%@ include file="/WEB-INF/views/common/setting.jsp" %>
+   <%@ include file="/WEB-INF/views/common/header.jsp" %>   
+   <%@ include file="/WEB-INF/views/common/footer.jsp" %> 
+    
+  6-2) src/main/resources/dataSource-config.xml 작성
+       => web.xml에 등록해야 함 
+       <context-param>
+         <param-name>contextConfigLocation</param-name>
+         <param-value>
+                  classpath:/dataSource-config.xml  <!-- 추가해야 작동  -->
+         </param-value>
+      </context-param>
+      
+      
+      --------
+      소스 작성
+      <!-- Mybatis 설정 시작 -->
+      <!-- 컨넥션풀 -->
+      <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+         <property name="jndiName" value="java:comp/env/jdbc/jsp_pj_117" />
+         <property name="resourceRef" value="true" />
+      </bean>
+      
+      <!-- Mybatis 파일 위치 지정, 컨넥션풀 -->
+      <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+         <property name="dataSource" ref="dataSource" />
+         <property name="mapperLocations" value="classpath:mappers/**/*.xml" />  
+      </bean>
+      
+      // 생성자 DI이며, sqlSession이 참조변수
+      <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+         <constructor-arg ref="sqlSessionFactory" />
+      </bean>
+      
+      <!-- Mybatis 설정 종료 -->
+      
+   ///////////////////////////////////////////////////////////////////////////////   
+      
+7.   상품목록 ProductList 작성
+    
+    7-1) 컨트롤러, 서비스, DAO에 어노테이션 추가
+    패키지 오류 먼저 수정(jsp패키지와 스프링 패키지가 다르므로)후 어노테이션 추가
+    
+   @Controller
+   public class StockController {
+      
+      private static final Logger logger = LoggerFactory.getLogger(StockController.class);
+      
+      @Autowired
+      ProductServiceImpl service;
+      
+      // 상품목록
+      @RequestMapping("productList.st")
+      public String productList(HttpServletRequest req, Model model) {
+         logger.info("[url ==> productList.st]");
+         
+         service.productList(req, model);
+         return "manager/stock/productList";
+      }
+   
+   }  
+       
+    ----=====================
+    주의사랑
+    상품등록 수정, 
+    @Service
+   public class ProductServiceImpl implements ProductService {
+   
+   @Autowired
+   ProductDAO dao;
+   
+   
+   // 상품리스트
+   @Override
+   public void productList(HttpServletRequest req, Model model) {
+      
+      System.out.println("서비스 - productList");
+      // 3단계. 화면으로부터 입력받은 값을 받는다.
+      String pageNum = req.getParameter("pageNum");
+      
+      // 4단계. 싱글톤방식으로 dao 객체 생성, 다형성 적용
+      // ProductDAO dao = ProductDAOImpl.getInstance();
+      
+      // 5-1단계.
+      Paging paging = new Paging(pageNum);
+      
+      // product 카운트
+      int total = dao.productCnt();
+      
+      System.out.println("total => " + total);
+      paging.setTotalCount(total);
+      
+      int start = paging.getStartRow(); // 페이지별 시작번호
+      int end = paging.getEndRow();   // 페이지별 끝번호
+      System.out.println("start ==> " + start);
+      System.out.println("end ==> " + end);
+      
+      // 5-2단계. 리스트 조회
+      // map 처리
+      // List<ProductDTO> list = dao.productList(start, end);
+      Map<String, Object> map = new HashMap<String, Object>();
+      map.put("start", start);
+      map.put("end", end);
+      List<ProductDTO> list = dao.productList(map);
+      
+      System.out.println("list ==> " + list);
+      
+      // 6단계. jsp로 처리 결과 전달(request나 session으로 처리 결과를 저장 후 전달)
+      model.addAttribute("list", list);
+      model.addAttribute("paging", paging);
+      
+   }
+      
+      나머지 소스는 주석처리
+   }   
+   
+   ---
+   @Repository
+   public class ProductDAOImpl implements ProductDAO {
+   
+   // Mybatis jar 파일들이 pom.xml에 등록되어 있어야 SqlSession이 import 가능
+   // dataSource-config.xml에 bean id="sqlSession"로 설정되어 있어야 함
+   
+   @Autowired
+   SqlSession sqlSession;
+   
+      // 상품 갯수
+   @Override
+   public int productCnt() {
+      System.out.println("DAO - productCnt"); 
+      
+      // 방법1.
+      // int selectCnt = sqlSession.selectOne("spring.mvc.pj_117.dao.ProductDAO.productCnt");
+      // return selectCnt;
+      
+      // 방법2. 
+      ProductDAO dao = sqlSession.getMapper(ProductDAO.class);
+      int selectCnt = dao.productCnt();
+      return selectCnt;
+   }
+   
+   // 상품목록
+   @Override
+   public List<ProductDTO> productList(Map<String, Object> map) {
+      System.out.println("DAO - productList");
+      
+      // 방법1.
+      // List<ProductDTO> list = sqlSession.selectList("spring.mvc.pj_117.dao.ProductDAO.productList", map);
+      // return list;
+      
+      // 방법2. 
+      ProductDAO dao = sqlSession.getMapper(ProductDAO.class);
+      List<ProductDTO> list = dao.productList(map);
+         
+            // 1. list 생성
+            // 2. dto 생성
+            // 3. dto에 rs게시글정보를 담는다.
+            // 4. list에 dto를 추가한다.
+             // 5. list 리턴
+      return list;
+   }
+      나머지 소스는 주석처리
+   }
+   
+   
+      
+   7-3) 마이바티스 매퍼 파일 작성
+   
+      => 1. 한두줄의 자바코드로 DB연동을 처리한다
+         2. SQL 명령어를 자바 코드에서 분리하여 XML 파일에 Mapper로 따로 관리
+         
+      - src/main/resources/에서 폴더 생성 : mappers 폴더 생성
+      - 그 폴더 우클릭 > new > other > xml file > productMapper.xml 생성
+      -  productMapper.xml 에 추가
+   
+   <?xml version="1.0" encoding="UTF-8"?>
+
+   <!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+   <mapper namespace="spring.mvc.pj_117.dao.ProductDAO">  <!-- namespace="패키지명.인터페이스" -->
+   <!-- 상품 갯수 -->
+    <select id="productCnt" resultType="int">
+       SELECT COUNT(*) as cnt FROM mvc_product_tbl
+    </select>
+    
+    <!-- 상품목록 -->
+   <select id="productList" parameterType="java.util.Map" resultType="spring.mvc.pj_117.dto.ProductDTO">
+       <![CDATA[   
+       SELECT * 
+        FROM (
+              SELECT A.*, rownum as rn  
+                  FROM (
+                      SELECT pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate
+                         FROM mvc_product_tbl  
+                        ORDER BY pdNo DESC 
+                       ) A 
+              ) 
+            WHERE rn >= #{start} AND rn <= #{end} 
+      ]]>      
+    </select>
+   </mapper>
+   
+    
+       
+   *************************************************
+   
+   실행 : hhttp://localhost/pj_117/productList.st
+   **************************************************
+   
+   
+///////////////////////////////////////////////////////////////////////////////   
+
+8. 상품 등록
+8-1) ProductController.java
+   
+   // 상품등록 화면 
+   @RequestMapping("productAdd.st")
+   public String productAdd() {
+      logger.info("[url ==> productAdd.st]");
+      
+      return "manager/stock/productAdd";
+   }
+   
+8-2). 경로변경
+ productAdd.jsp
+ 
+ *************************************************
+   메뉴 : 상품등록 클릭
+   실행 : hhttp://localhost/pj_117/productAdd.st
+**************************************************
+
+8-3) 상품 등록 처리
+
+****** 주의사항 **********************************
+
+[ servlet_context.xml 추가 ] - webapp/WEB-INF/spring/appServlet/servlet-context.xml
+
+    <!-- MultipartResolver 설정 -->
+   <beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+      <beans:property name="maxUploadSize" value="100000000" />
+      <beans:property name="maxInMemorySize" value="100000000" />
+   </beans:bean>
+   
+   
+[pom.xml 추가]
+   
+   <!-- fileupload 시작 : 상품등록, 수정시 필요함-->
+    <dependency>
+        <groupId>commons-fileupload</groupId>
+        <artifactId>commons-fileupload</artifactId>
+        <version>1.3.2</version>
+    </dependency>
+  
+    <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.4</version>
+  </dependency>
+  
+  <!-- fileupload 끝 -->
+
+
+****** 주의사항 **********************************   
+상품등록,수정 => 매개변수에 MultipartHttpServletRequest req 사용
+
+등록, 수정후 리스트 이동시 바로 반영(새로고침 할 필요 없음)
+	// 상품등록
+	@Override
+	public void productAddAction(MultipartHttpServletRequest req,  Model model)
+			throws ServletException, IOException {
+		System.out.println("서비스 => 상품등록");
+
+		// 추가 : JSP의 ImageUploader 파일 기능
+		MultipartFile file = req.getFile("pdImg"); // 상품이미지
+		System.out.println("file : " + file);
+		// 추가하기위해 선택할 샘플이미지경로
+		// D:\dev117\workspace\spring)pj_117]src\main\webapp\resources\images
+		String saveDir = req.getSession().getServletContext().getRealPath("/resources/upload/");
+		System.out.println("saveDir : " + saveDir);
+		// 저장경로(jsp의 img_uploader_dir) : spring_pj117로 변경
+
+		String realDir = "D:\\dev117\\workspace\\spring_jsp_pj_117\\src\\main\\webapp\\resources\\upload\\";
+		System.out.println("realDir : " + realDir);
+
+		try {
+			file.transferTo(new File(saveDir + file.getOriginalFilename()));
+
+			FileInputStream fis = new FileInputStream(saveDir + file.getOriginalFilename());
+			FileOutputStream fos = new FileOutputStream(realDir + file.getOriginalFilename());
+
+			int data = 0;
+
+			while ((data = fis.read()) != -1) {
+				fos.write(data);
+			}
+			fis.close();
+			fos.close();
+
+			ProductDTO dto = new ProductDTO();
+			dto.setPdName(req.getParameter("pdName"));
+			
+			//수정S
+			//String p_img1 = "/jsp_pj_117/resources/upload/" + (String)req.getAttribute("fileName"); // 플젝명/경로/ => 절대경로
+			//System.out.println("dto.getPdImg() : " + p_img1);
+			
+			//수정E
+			String p_img1 = "/pj_117/resources/upload/" + file.getOriginalFilename(); // 컨텍스트명/ => 절대경로
+			System.out.println("dto.getPdImg() : " + p_img1);
+			dto.setPdImg(p_img1);
+
+			dto.setCategory(req.getParameter("category"));
+			dto.setBrand(req.getParameter("brand"));
+			dto.setContent(req.getParameter("content"));
+			dto.setPrice(Integer.parseInt(req.getParameter("price")));
+			dto.setQuantity(Integer.parseInt(req.getParameter("quantity")));
+			dto.setStatus(req.getParameter("status"));
+
+			// 4단계. 싱글톤으로 dao객체 생성, 다형성 생성
+			// ProductDAO dao = ProductDAOImpl.getInstance();
+
+			// 5단계. 상품정보 insert
+			int insertCnt = dao.productInsert(dto);
+
+			System.out.println("insertCnt" + insertCnt); // 정상이면 1
+			// 6단계. jsp로 처리결과 전달
+			req.setAttribute("insertCnt", insertCnt);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}     
+     
+        

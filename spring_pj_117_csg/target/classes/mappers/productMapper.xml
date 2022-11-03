@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  
+  <!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="spring.mvc.pj_117_csg.dao.ProductDAO">  <!-- namespace="패키지명.인터페이스" -->
+	
+<!-- 상품 갯수 -->
+<select id="productCnt" resultType="int">
+	SELECT COUNT(*) as cnt FROM mvc_product_tbl
+</select>
+ <!-- 상품 목록 -->
+   <select id="productList" parameterType="java.util.Map" resultType="spring.mvc.pj_117_csg.dto.ProductDTO">
+    <![CDATA[
+   		SELECT * 
+   			FROM (SELECT A.*, rownum as rn 
+			             	 FROM(SELECT* FROM mvc_product_tbl 
+			             				 ORDER BY pdNo DESC 
+			               	) A   
+			            ) 
+              WHERE rn >=#{start}
+                   AND rn<=#{end}
+   	 ]]>
+   </select>
+
+   <!-- 상품 추가 -->
+   <insert id="productInsert" parameterType="spring.mvc.pj_117_csg.dto.ProductDTO" >
+   INSERT INTO mvc_product_tbl(pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate) 
+	VALUES((SELECT NVL(MAX(pdNo)+1, 1) FROM mvc_product_tbl), #{pdName}, #{pdImg}, #{category}, #{brand}, #{content}, #{price}, #{quantity}, #{status}, sysdate)
+   </insert>
+   
+   <!--  상품 상세페이지 -->
+     <!-- resultType이 int였으면 select count(*)해줬어야함. 아니니까 카운트x -->
+  	<select id="productDetail" parameterType="int" resultType="spring.mvc.pj_117_csg.dto.ProductDTO">
+  	SELECT * FROM mvc_product_tbl WHERE pdNo=#{pdNo}
+  	</select>
+  	
+  <!--  상품 수정처리 -->
+     <update id="productUpdate" parameterType="spring.mvc.pj_117_csg.dto.ProductDTO">
+     UPDATE mvc_product_tbl 
+     		SET pdName=#{pdName}, brand=#{brand}, pdImg=#{pdImg}, category=#{category}, 
+     				content=#{content}, price=#{price},  quantity=#{quantity}, status=#{status} 
+     WHERE pdNo=#{pdNo}
+     </update>
+     
+     <delete id="productDelete" parameterType="int">
+     DELETE FROM mvc_product_tbl WHERE pdNo=#{pdNo}
+     </delete>
+</mapper>
+
+

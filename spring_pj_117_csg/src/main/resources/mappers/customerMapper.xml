@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+     <!-- namespace="패키지명.인터페이스" -->
+     <mapper namespace="spring.mvc.pj_117_csg.dao.CustomerDAO"> 
+         
+         <!-- id="메서드명" parameterType="매개변수 파일의 경로" resultTyple="자료형"
+            insert, update, delete의 경우에는 int 반환이므로 Mybatis가 자동처리 (생략 가능)
+            Mybatis에서 변수는 #{ }으로 표현한다
+         -->
+         
+         <!-- 회원가입 처리 --><!-- 시큐리티 : key 컬럼 추가 -->
+         <insert id="insertCustomer" parameterType="spring.mvc.pj_117_csg.dto.CustomerDTO">
+            INSERT INTO mvc_customer(id, password, name, birthday, address, hp, email, regDate, key)  
+          VALUES(#{id}, #{password}, #{name}, #{birthday}, #{address}, #{hp}, #{email}, #{regDate}, #{key})
+         </insert>
+         
+         <!-- 아이디 중복확인 -->
+         <!-- resultType="int"일 경우 select count(*) 조회 , id는 idCheck의 매개변수 strId 조회 -->
+         <select id="idCheck" parameterType="String" resultType="int">
+            select count(*) from mvc_customer where id=#{strId}
+         </select>
+         
+         <!-- 비밀번호 확인 -->
+         <select id="passwordCheck" parameterType="String" resultType="int">
+            select count(*) from mvc_customer where password=#{strPassword}
+         </select>
+         
+         <!-- 시큐리티에서 selectCusomer로 로그인하므로 주석 처리 -->
+         <!-- 아이디 비밀번호 확인  -->
+         <!-- Map에 추가(put)된 키명와 #{변수명}은 반드시 일치해야 한다. -->
+         <!-- <select id="idPasswordChk" parameterType="java.util.Map" resultType="int">
+            select count(*) from mvc_customer where id=#{strId} and password=#{strPassword}
+         </select> -->
+         
+         
+         <!-- 회원 탈퇴 처리 -->        
+         <delete id="deleteCustomer" parameterType="String"> 
+            delete from mvc_customer where id=#{strId}
+         </delete>
+         
+         <!-- 회원 상세페이지 -->
+         <select id="getCustomerDetail" parameterType="String" resultType="spring.mvc.pj_117_csg.dto.CustomerDTO">
+            select * from mvc_customer where id=#{strId}
+         </select>
+         
+         <!-- 회원 수정 처리 -->
+         <update id="updateCustomer" parameterType="spring.mvc.pj_117_csg.dto.CustomerDTO">
+            update mvc_customer
+               set password=#{password}, name=#{name}, birthday=#{birthday}, address=#{address}, hp=#{hp}, email=#{email} 
+               where id=#{id}
+         </update>
+         
+          <!-- 시큐리티 - 로그인 인증시 호출 -->
+         <!-- 시큐리티 : UserAuthenticationService  loadUserByUsername()에서 호출 -->
+         <select id="selectCustomer" parameterType="String" resultType="spring.mvc.pj_117_csg.dto.CustomerDTO">
+            select * from mvc_customer where id=#{id}
+         </select>
+         
+         <!-- 시큐리티 : UserLoginSuccessHandler에서 호출 -->
+         <select id="authorityCheck" resultType="String">
+            select authority from mvc_customer where id=#{id}
+         </select>
+         
+         <!-- 시큐리티 - UserLoginFailureHandler에서 호출 -->
+       <select id="pwdCheck" parameterType="String" resultType="String">
+             SELECT password FROM mvc_customer WHERE id=#{strId}
+       </select>
+
+      <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 한다. -->
+      <select id="selectKey" parameterType="String" resultType="int">
+         SELECT COUNT(*) FROM mvc_customer WHERE key=#{key}
+      </select>
+
+      <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 하며, 1로 수정 -->
+      <update id="updateGrade" parameterType="String">
+         UPDATE mvc_customer
+         SET enabled=1
+         WHERE key=#{key}
+      </update>
+      
+      
+      
+      <!-- 고객목록  -->
+      <select id="customerList" resultType="spring.mvc.pj_117_csg.dto.CustomerDTO">
+      	SELECT * FROM mvc_customer WHERE not id='admin' ORDER BY regdate DESC
+      </select>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+     </mapper>
+     
+    <!-- 
+      1. <mapper namespace="패키지명.인터페이스명">
+      2. <id="인터페이스의 메서드명">는 유일해야 하며, 인터페이스의 메서드명을 사용한다.
+         따라서 인터페이스 메서드 갯수만큼 Mapper도 작성해야 한다.
+      3. select 문장은 반드시 resultType을 기술해야 한다.
+         주의사항 : select 문장의 resultType이 int형이면 "SELECT * " ==> "SELECT COUNT(*) "로 바꾼다.
+      4. insert, update, delete 구문은 <insert><update><delete> 엘리먼트를 사용하며, parameterType이 필수이다.
+         resultType은 int형이며, 마이바티스가 알아서 성공, 실패 여부의 결과값을 넘긴다.
+      5. parameterType, resultType이 클래스타입인 경우 패키지명.클래스명을 기술한다.
+      6. 문장의 끝에 ';'을 붙이지 않는다.
+      7. 주의사항 : 파라미터 일반변수명은 #{변수명}으로 기술하며, 메서드의 매개변수명과 반드시 일치해야 한다. 예) id=#{strId}
+      8. 파라미터 값이 2개이상일 때는 parameterType을 java.util.Map 또는 VO로 받는다.
+         주의사항 : Map에 추가(put)된 키명와 #{변수명}은 반드시 일치해야 한다.
+      9. preparedStatement의 '?' 대신에 pstmt에서 set한 변수명이 온다. ==> #{변수명}
+   -->
