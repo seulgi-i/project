@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Bootstrap CSS -->
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+	rel="stylesheet"
+	integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+	crossorigin="anonymous">
+<script src="https://kit.fontawesome.com/44bbd7835d.js"
+	crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../resources/css/commonCss/header.css">
+<link rel="stylesheet" href="../../resources/css/commonCss/footer.css">
+<link rel="stylesheet" href="../../resources/css/customerCss/join.css">
+<script src="https://kit.fontawesome.com/bb9e081823.js"
+	crossorigin="anonymous"></script>
+<script src="../resources/js/cusomerJS/main.js" defer></script>
+<script type="text/javascript">
+	function submit_check(){
+		/* alert("정규식"); */
+		//이름 : 입력시작부터 입력 끝까지 한글 2~5글자까지 일치하는 패턴으로 정규표현 객체를 생성.
+		//주의 : 정규식에 공백이 있으면 안됨(띄어쓰기x)
+		var reg_name = 	/^[가-힣]{2,5}$/;//이름/^[]$/입력끝   
+	
+		//비밀번호: 숫자와 문자 포함형태의 6~12자리의 이내 암호 정규식
+		//테스트 : 한글 입력 후 NG
+		var reg_pass =  /^[A-Za-z0-9]{6,12}$/;
+		
+		//핸드폰 : 첫번호는 010, 070, 080 중 하나로 시작하고, 다음 번호는 3~4개까지 오고,
+		//		   마지막 번호는 숫자 4개가 일치하는 패턴으로 정규표현 객체를 생성.
+		
+		var reg_hp =/^(010|070|080)\d{3,4}\d{4}$/;  //핸드폰/^$/   or=| 자릿수\ d정수
+		
+		/* 
+	      1. ^ : 문장의 처음부터 시작한다.
+	      2. [0-9a-zA-Z_-]+ : 숫자 또는 알파벳 소문자 대문자 또는 밑줄(_), 하이픈(-)이 1개이상(+)이상 와야한다.
+	      3. ([0-9a-zA-Z_-]+) :  2에서의 형식을 한 묶음으로 한다. 시작과 끝으로 한다.
+	      4. @ : 골뱅이가 들어가고
+	      5. \.: . 이 들어간다.
+	      6. {1,2} : 앞의 식이 1개 또는 2개가 연속으로 올 수 있다.
+	      7. $ : 문장끝
+	      8. i : 대소문자를 구별하지 않겠다.
+	      9. * : 0또는 그 이상의 문자가 연속될 수 있음을 의미.
+	      */
+	      //테스트 : email1에 한글 또는 email2에 값 안 주기  
+	    var reg_email = /^[0-9a-zA-Z][_0-9a-zA-Z-]*@[_0-9a-zA-Z-]+(\.[_0-9a-zA-Z-]+){1,2}$/i;
+	    
+	    //방문자가 입력한 이름, 핸드폰번호가 정규식 표현에 어긋나면 false를 반환하다.
+	    //test(): 주어진 문자열이 정규표현ㅅ기을 만족하는지 판별하고, 그 여부를 true 또는 false로 반환하는 메소드로 match()와 같은 기능
+		var name = document.signIn.userName.value;
+		var pwd = document.signIn.userPassword.value;
+		var hp = document.signIn.userHp.value;
+		var email = document.signIn.email1.value +"@"+ document.signIn.email2.value;
+		// 방문자가 입력한 이름, 핸드폰번호가 정규식 표현에 어긋나면 false를 반환.
+		//test() : 정규식 표현시 제공하는 메서드 
+		var result1 = reg_name.test(name);
+		var result2 = reg_pass.test(pwd);	
+		var result3 = reg_hp.test(hp);
+		var result4 = reg_email.test(email);
+		
+		//필수체크
+		if(!name){
+			alert("이름을 입력하세요");
+			document.signIn.userName.value="";	
+			document.signIn.userName.focus();	
+			return false;
+		}else if(!result1){
+			alert("이름 입력이 잘못되었습니다. 확인하세요!");
+			document.signIn.userName.value="";	
+			document.signIn.userName.focus();	
+			return false;
+		}	
+		
+		if(!pwd){
+			alert("패스워드를 입력하세요");
+			document.signIn.userPassword.value="";	
+			document.signIn.userPassword.focus();	
+			return false;
+		}else if(!result2){
+			alert("비밀번호 입력이 잘못되었습니다. 확인하세요!");
+			document.signIn.userPassword.value="";	
+			document.signIn.userPassword.focus();	
+			return false;
+		}
+	
+		if(!hp){
+			alert("핸드폰 번호 입력하세요");
+			document.signIn.userHp.value="";	
+			document.signIn.userHp.focus();	
+			return false;
+		}else if(!result3){
+			alert("핸드폰 번호 입력이 잘못되었습니다. 확인하세요!");
+			document.signIn.userHp.value="";	
+			document.signIn.userHp.focus();	
+			return false;
+		}
+		
+		if(!email){
+			alert("이메일 입력하세요");
+			document.signIn.email1.value="";	
+			document.signIn.email1.focus();	
+			return false;
+		}else if(!result4){
+			alert("이메일 입력이 잘못되었습니다. 확인하세요!");
+			document.signIn.email1.value="";	
+			document.signIn.email2.value="";	
+			document.signIn.email1.focus();	
+			return false;
+		}
+
+	}
+	//이메일 주소를 selectbox로 선택하면 값이 email2로 들어가도록 한다.
+	function selectEmailChk(){
+		if(document.signIn.email3.value == "naver.com"){
+			document.signIn.email2.value = document.signIn.email3.value;
+			return false;
+		}else if(document.signIn.email3.value == "gmail.com"){
+			document.signIn.email2.value = document.signIn.email3.value;
+			return false;
+		}else if(document.signIn.email3.value == "daum.net"){
+			document.signIn.email2.value = document.signIn.email3.value;
+			return false;
+		}else if(document.signIn.email3.value == "nate.com"){
+			document.signIn.email2.value = document.signIn.email3.value;
+			return false;	
+		}else if(document.signIn.email3.value == "0"){
+			document.signIn.email2.value = document.signIn.email3.value;
+			document.signIn.email2.value="";	
+			document.signIn.email2.focus();	
+			return false;
+		}
+	
+	}
+	
+</script>
+<style>
+label {
+    display: inline-block;
+    font-size: 14px;
+}
+body {
+    margin: 0;
+    font-family: var(--bs-body-font-family);
+    font-size: var(--bs-body-font-size);
+    font-weight: var(--bs-body-font-weight);
+    line-height: var(--bs-body-line-height);
+    color: var(--bs-body-color);
+    text-align: var(--bs-body-text-align);
+    background-color: var(--bs-body-bg);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    }
+input {
+    padding: 0px 0px;
+    height: 23px;
+    line-height: 3px;
+    margin: 0px 9px 10px;
+    font-size: 12px;
+    border: 1px solid #000;
+    border-radius: 0;
+    width: 50%;
+
+}
+#member-wrap {
+    max-width: 600px;
+    margin: 60px auto;
+    background-color: transparent;
+}
+fieldset {
+    min-width: 0;
+    padding: 13px;
+    margin: 5px;
+    margin-left: 88px;
+    border: 0;
+}
+[type=submit]:not(:disabled), button:not(:disabled) {
+    cursor: pointer;
+    background: black;
+    color: linen;
+    margin-left: 80px;
+}
+[type=button], [type=reset], [type=submit], button {
+    -webkit-appearance: button;
+    cursor: pointer;
+    background: black;
+    color: linen;
+    margin-left: 80px;
+}
+tbody, td, tfoot, th, thead, tr {
+    border-color: inherit;
+    border-style: solid;
+    border-width: 0;
+}
+#member-wrap input{
+ background: none;
+}
+#member_click input{
+    border: 1px solid #000;
+    border-radius: 28px;
+    height: 41px;
+    line-height: 32px;
+    text-align: center;
+    display: block;
+    font-size: 13px;
+    margin: 0 0 17px;
+    padding: 3px;
+    width: 264px;
+    margin-left: 63px;
+    background: black;
+    color: linen;
+}
+#member-wrap input {
+    border: 1px solid #000;
+    height: 35px;
+    line-height: 13px;
+    margin: 12px 0 11px;
+    width: 68%;
+    font-size: 12px;
+    padding: 10px;
+    margin-inline: auto;
+}
+div#member_click {
+    margin-left: -41px;
+}
+
+</style>
+</head>
+<body style="background-color: linen;">
+	<!-- 네비바 -->
+	<nav class="navbar navbar-light bg-light fixed-top" style="width: 100%">
+		<div class="container-fluid">
+			<i class="fa-brands fa-pagelines"><a class="navbar-brand"
+				href="../../common/main.html" style="font-size: 13px">&nbsp;Flower;</a></i>
+
+			<ul class="navbar_menu">
+				<li><a href="../../common/main.html">main</a></li>
+				<li><a href="../../customer/product/shopAll_flower.html">flower</a></li>
+				<li><a href="../../customer/board/boardNotice.html">Notice</a></li>
+			</ul>
+			<ul class="navbar_icons" style="font-size: 13px">
+				<li><a href="../../customer/login/login.html">LOGIN</a></li>
+				<li><a href="../../customer/join/join.html">JOIN</a></li>
+				<li><a href="../../customer/mypage/cart/cartList.html"><i
+						class="fa fa-cart-plus"></i></a></li>
+				<li><a href="../../customer/mypage/info/userinfo.html"><i class="fa fa-user"></i></a></li>
+
+			</ul>
+
+		</div>
+
+	</nav>
+	<div id="member-wrap">
+<div id="section">
+		<h1 style="font-family: 'Gowun_Batang', serif; margin: 150px 0 auto; text-align: center;">join</h1>
+	</div>
+	<div id="member_join">
+	<form name="signIn" action="../../common/main.html"" method="post" onsubmit="return submit_check();">
+		<fieldset>
+			<legend></legend>
+			<table>
+				<tr>
+					<td align="right"><label for="nameChk">이름 :&nbsp;</label></td>
+					<td><input type="text" id="nameChk" name="userName" size="20"></td>
+				</tr>
+				<tr>
+					<td align="right"><label for="idChk">아이디 :&nbsp;</label></td>
+					<td><input type="text" id="idChk" name="userid" size="20"></td>
+				</tr>
+				<tr>
+					<td align="right"><label for="pwdChk">비밀번호 :&nbsp;</label></td>
+					<td><input type="password" id="pwdChk" name="userPassword" size="20"></td>
+				</tr>
+				<tr>
+					<td align="right"><label for="addChk">주소 :&nbsp;</label></td>
+					<td><input type="text" id="addChk" name="useradd" size="50"></td>
+				</tr>								
+				<tr>
+				
+					<td align="right"><label for="hpChk">핸드폰 :&nbsp;</label></td>
+					<td><input type="text" id="hpChk" name="userHp" size="13"></td>
+				</tr>
+				
+				<tr>
+					<td align="right"><label for="emailChk">이메일 :&nbsp;</label></td>
+					<td>
+						<input type="text"id="emailChk"name="email1" maxlength="20" style="width:100px">
+						@
+						<input type="text"id="emailChk" name="email2" maxlength="20" style="width:100px">
+						<select name="email3" style="width:100px" onchange="selectEmailChk();">
+							<option value="0">직접입력</option>
+							<option value="naver.com">네이버</option>
+							<option value="gmail.com">구글</option>
+							<option value="daum.net">다음</option>
+							<option value="nate.com">네이트</option>
+						</select>						
+					</td>
+				</tr>
+				
+            <tr>
+               <td colspan="2" ><br>
+                  <div id="member_click">
+                     <input type="submit" value="회원가입"> 
+                     <input type="reset" value="가입취소">
+                  </div>
+               </td>
+            </tr>
+			</table>
+		</fieldset>
+	</form>
+	</div>
+   </div>
+   
+   <!--회원가입 컨텐츠 종료 -->
+
+   
+	<!-- 푸터 -->
+	<div class="footer_area">
+    <div class="footer_inner">
+	<div class="xans-element- xans-layout xans-layout-footer footer_box1 "><span>TRADE NAME&nbsp;Flower</span>
+	<span>COMPANY&nbsp;(주)플라워</span>
+	<span>OWNER&nbsp;최슬기</span>
+	<br><span>CALL CENTER&nbsp;1600-1234</span>
+	<span class="txt">business registration no.&nbsp;100-00-123456&nbsp;</span>
+	<br><span class="txt">e-commerce permit registration no.&nbsp;제2019-서울-0000호</span>
+	<br><span>ADDRESS&nbsp;서울특별시 독산동 벚꽃로23길 32-23</span>
+	<br><span>E-MAIL&nbsp;help@flower.com</sspan>
+	<span>제휴문의&nbsp;yison@flower.com</span>
+	</div>
+	<div class="footer_box3">(c) 2022 flower. designed by seulgi. hosting by cosmo corp.</div>
+	<!-- Optional JavaScript; choose one of the two! -->
+
+	<!-- Option 1: Bootstrap Bundle with Popper -->
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+		crossorigin="anonymous"></script>
+</div>
+</div>
+	<!-- Option 2: Separate Popper and Bootstrap JS -->
+	<!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    -->
+</body>
+</html>

@@ -1,0 +1,172 @@
+@charset "UTF-8";
+
+
+.title_cscenter {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 50px;
+    font-family: 'Noto Sans KR',sans-serif;
+    font-size: 0.75em;
+    line-height: 1.2em;
+    color: #2c3b34;
+    background: #fff;
+}
+
+
+#container {
+   width: 100%;
+   margin: 0 auto;
+}
+
+#contents {
+   max-width: 1240px;
+   min-width: 1240px;
+   width: 100%;
+   margin: -53px auto;
+   min-height: 800px;
+}
+#contents a button{
+	display:inline-block;
+	margin-left :40px;
+
+}
+#contents a button:hover{/*마우스 갖다 올렸을 때*/
+   background-color : #fdddde;
+   border-radius: 27px;
+}
+
+#section2 {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   color: black;
+}
+
+#section {
+	width: 100%;
+  	height: 100%;
+    margin : 87px auto;
+    padding: 65px;
+	font-size:13px;
+	text-align:center;
+}
+
+
+/* 가운데  */
+#center {
+   width: 100%;
+}
+
+.board_notice_wrap {
+	width: 100%;
+    height: 229px;
+    margin-top: 40px;
+    position: relative;
+    background-color: #fff;
+    padding: -10px;
+	border-top: 2px solid pink;
+	float: center;
+}
+
+table {
+	border-collapse: collapse;
+	
+}
+
+caption {
+	display:none;
+	
+}
+.navbar_menu a {
+	text-decoration : none;
+	color : black;
+}
+
+
+
+board_notice {
+	width : 88%;
+	color : black;
+	
+}
+
+.board_notice tr {
+	text-align: center;
+	border-bottom:1px solid #ccc;
+		color : black;
+}
+
+
+.board_notice th,
+.board_notice td {
+	
+	height: 60px;
+   padding-left:55px;   /* 이거로 게시판 좌우 정렬함  */
+	font-size : 14px;
+	color : black;
+		
+}
+.board_notice tbody tr:hover{/*마우스 갖다 올렸을 때*/
+   background-color : #fdddde;
+   border-radius : 4px;
+}
+
+
+.board_notice td {
+	text-align : center;
+		color : black;
+	
+}
+.board_notice td a {
+		color : black;
+}
+.board_notice .tit:nth-child(2) {
+	text-align : left;
+		color : black;
+}
+
+.board_notice .tit:hover { /* 마우스를 올렸을 때. */
+	text-decoration : underline;
+}
+
+
+.board_notice_wrap .paging {
+	margin-top : 30px;
+	padding-left: 80px; /* 페이지버튼 좌우 정렬 */
+	text-align : center;
+	font-size : 0;
+}
+.board_notice_wrap .paging a {
+	display : inline-block;
+	margin : 10px;
+	padding : 5px 10px;
+	border-radius: 27px;
+	font-size : 12px;
+}
+
+
+.board_notice_wrap .paging a.bt {
+	border: 1px solid #ffe3e9;
+	background: #ffe3e9;
+		color : black;
+}
+
+.board_notice_wrap .paging a.num {
+	border: 1px solid black;
+	font-weight:600;
+	color : black;
+	
+}
+.board_notice_wrap .paging a.num.on {
+	background : #ffbdcc;
+	color : black;
+}
+
+.container-fluid {
+    background-color: #fff;
+	float: center;
+}
+
+
+
+

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- 반응형웹 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원가입 처리</title>
+
+<link rel="stylesheet" href="../../resources/css/commonCss/header.css">
+<link rel="stylesheet" href="../../resources/css/commonCss/footer.css">
+<link rel="stylesheet" href="../../resources/css/customerCss/join.css">
+
+<!-- 1.fontawesome.com에서 인증(start for free) 2.이미지 사용가능 -->
+<script src="https://kit.fontawesome.com/44bbd7835d.js" crossorigin="anonymous"></script>
+
+
+<!--3-3-2. 자바스크립트 이벤트 추가 : 햄버거버튼을 클릭하면 아래쪽으로 메뉴가 나오도록 main.js에서 추가(외부에서 외부파일 가져옴)-->
+<!-- defer : 모든 html파일을 다 읽어서 준비가 된다면(loading) 그 때 표시하겠다. =그 때까지 html이 브라우저에서 표시X -->
+<script src="../resources/js/cusomerJS/main.js" defer></script>
+
+</head>
+<body>
+
+<div class ="wrap">
+   <!-- header 시작 -->
+   <nav class="navbar">
+   
+      <ul class="navbar_title">
+         
+      </ul>
+      <ul class="navbar_menu">
+         <li><a href="../../common/main.html">HOME</a></li>
+         <li><a href="../product/shopAll.html">제품소개</a></li>
+         <li><a href="../board/board.html">COMMUNITY</a></li>
+      </ul>
+      
+      <ul class="navbar_icons">
+         
+         <li><i class="fa fa-twitter"></i></li>
+         <li><i class="fa fa-facebook"></i></li>
+         
+         <li><a href="../login/login.html">LOGIN</a></li>
+         <li><a href="../join/join.html">JOIN</a></li>
+
+        <li><a href="../mypage/cart/cartList.html"><i class="fa fa-cart-shopping"></i></a></li>
+        <li><a href=""><i class="fa fa-user"></i></a></li>
+         
+      </ul>
+       <!-- 반응형웹 - 1. 햄버거 버튼 -->
+      <a href="#" class="navbar_toggleBtn">
+      <i class="fa fa-bars"></i>
+      </a>
+   </nav>
+   <!-- header 끝 -->
+
+   <!-- 컨텐츠 시작 -->
+
+   	
+   <!--회원가입 컨텐츠 종료 -->
+
+   
+   <!-- footer시작 -->
+   <div class="footer_info">
+      <div class="footer_link">
+         <ul>
+            <li><a href="#">회사소개</a></li>
+            <li><a href="#">이용약관</a></li>
+            <li><a href="#">개인정보 처리방침</a></li>
+         </ul>
+      </div>
+      <div class="footer_info_customer">
+         <h4>고객센터&nbsp; 010-1111-2222</h4>
+         <p>평일 및 주말 10:00 ~ 17:00(공휴일 휴무)
+            점심시간 : 12:00 ~ 13:00</p>
+      </div>
+   
+      <div class="footer_info_company">
+         <span><strong>법인명</strong>kosmoCorp</span>
+         <span><strong>대표</strong>Park Hana</span>
+         <span><strong>사업자번호</strong>000-11-2222</span>
+         <span><strong>사업자 소재지</strong>서울시 금천구 가산동</span>
+      </div>
+      
+   </div>
+   
+   <!-- footer 끝 -->   
+</div>
+</body>
+</html>

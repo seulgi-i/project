@@ -1,0 +1,50 @@
+플젝 복사후 플젝 우클릭 > properties > web project Settings > Context root > 복사한 플젝명(기존플젝_이니셜)으로 바꾼다.
+2. index.html에서 main.html경로수정
+	window.location='http://localhost/html_ph_117_csg/common/main.html'
+
+
+-----------------
+
+스터디 -> www.w3chools.com/
+
+1. 자바플젝(완료)
+2. JSP 플젝
+   화면설계(진행) + 모델링설계(완) + 구현(MVC 패턴 => Model(데이터) + View(화면) + Controller(백엔드)) 
+3. 스프링 플젝
+4. 팀플
+
+-----------------------------------------------------
+
+화면설계 => 반응형 웹디자인 필수
+
+         메뉴 : 관리자 - 재고관리(상품등록/수정/삭제), 회원관리(회원수정, 회원강퇴, 수정, 탈퇴), 게시판, 주문목록(결제승인, 배송, 주문삭제..), 결산(챠트)
+                고객 - 로그인, 회원가입, 소개, 장바구니(삭제, 선택, 구매하기), 구매요청,  커뮤니티(Q&A), 마이페이지(회원수정, 회원탈퇴, 주문목록, 환불신청)
+
+-------------------
+webcontent/
+common 공통
+customer 고객
+admin  관리자
+---------------------------------------------------
+ common   > footer.html (jsp할 때 분리)
+			header.html (jsp할 때 include 대상)
+			main.html => 작업
+---------------------------------------------------
+ admin	  > stock  > productAdd.html 			- 관리자 상품등록
+ 					 productAddAction.html		- 관리자 - 상품등록처리
+ 					 productList.html			- 관리자 - 상품목록
+---------------------------------------------------
+ customer > board  > board.html					- 게시판(실습x)
+ 		  > join   > join.html					- 회원가입
+ 		  			 joinAction.html			- 회원가입처리
+ 		  > login  > login.html					- 로그인
+ 		  		   > loginAction.html			- 로그인 처리
+ 		  > mypage > cart  > cartList.html		- 장바구니 목록(실습x)
+ 		  			 order > custOrderList.html - 고객 주문목록(실습x)
+ 		  > product> shopAll.html				- 
+ 
+ resorces > css	   > commonCss > header.css		* new>other>css >header.css
+ 							   	 footer.css
+ 							   	 main.css
+ 		  > js	   > customerJS> main.js
+ 

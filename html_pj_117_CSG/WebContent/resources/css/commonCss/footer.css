@@ -1,0 +1,38 @@
+@charset "UTF-8";
+
+.footer_box1 {
+    font-family: 'Work Sans',sans-serif;
+    font-size: 11px;
+    line-height: 21px;
+    color: #a2a2a2;
+    font-weight: 400;
+    letter-spacing: 0;
+    padding: 0 0 20px;
+    text-align: center;
+   
+}
+.footer_area {
+    width: 100%;
+    margin-top: 100px;
+    padding: 40px 0;
+    border-top : 1px solid #a2a2a2;
+}
+.footer_area .footer_inner {
+    min-width: 1250px;
+    padding: 0 40px;
+    overflow: hidden;
+    box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    
+}
+.footer_box3 {
+    font-family: 'Zilla Slab',serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #867f63;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-align: center;
+}
