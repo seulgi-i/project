@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.AutoTransferDAO">
+<!-- namespace="패키지명.인터페이스" -->
+
+	<!-- autoTransfer 테이블 -->
+	<!-- 자동이체 정보 조회 -->
+	<select id="getMyAutoTransfer" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.AutoTransferDTO">
+		select *
+		FROM auto_transfer t, account_tbl m
+		WHERE t.account = m.account
+ 		AND m.id = #{id}
+ 		ORDER BY auto_id desc
+	</select>
+	
+	<!-- 자동이체 등록 -->
+	<insert id="insertAutoTransfer" parameterType="com.mvc.upbank.dto.AutoTransferDTO">
+    	INSERT INTO auto_transfer(auto_id, ACCOUNT, auto_senderBank, auto_senderAccount, auto_type, auto_outDate, auto_balance, auto_registDate, auto_expirationDate, auto_inPlace, auto_status)
+    	VALUES(((SELECT NVL(MAX(auto_id) + 1, 1) FROM auto_transfer)), #{ACCOUNT},#{auto_senderBank},#{auto_senderAccount},#{auto_type}, #{auto_outDate}, #{auto_balance},#{auto_registDate}, #{auto_expirationDate}, #{auto_inPlace},0)
+    </insert>
+    
+    <!-- 회원 자동이체 해지 -->
+	<update id="deleteAutoTransfer" parameterType="int">
+		UPDATE auto_transfer SET auto_status=1, auto_cancle=sysdate  
+		 WHERE auto_id=#{auto_id}
+	</update>
+
+	<!-- 자동이체 오늘날짜에 입금할거있는지 조회 -->
+    <select id="selectByDay" parameterType="int" resultType="com.mvc.upbank.dto.AutoTransferDTO">
+		<![CDATA[
+			SELECT * FROM auto_transfer WHERE auto_outDate=#{day} and auto_status=0 and auto_registDate<=sysdate
+		]]>
+    </select>
+    
+    <!-- 자동이체위해 내계좌로 잔액조회 -->
+    <select id="selectAccountBalance" parameterType="string" resultType="int">
+    	SELECT account_balance FROM account where id=#{id}
+    </select>
+    
+    <!-- 자동이체 실행(이체 내역 테이블에 내역추가) -->
+    <insert id="insertTranferByAuto" parameterType="com.mvc.upbank.dto.TransferDTO" >
+  		INSERT INTO account_transfer (tf_num, ACCOUNT, tf_sender_acc, tf_bank, tf_amount, tf_sender_comment, tf_deposit_comment, tf_acc_holder, tf_charges)
+		values(((SELECT NVL(MAX(tf_num) + 1, 1) FROM account_transfer)), #{ACCOUNT}, #{tf_sender_acc}, #{tf_bank}, #{tf_amount}, #{tf_sender_comment}, #{tf_deposit_comment}, #{tf_acc_holder}, #{tf_charges})
+   </insert>
+    
+      <!-- 자동이체 실행(자동이체 내역 테이블에 내역추가) -->
+    <insert id="insertAutoTransferList" parameterType="java.util.Map">
+    	INSERT INTO auto_transfer_list
+    	VALUES(((SELECT NVL(MAX(auto_transfer_id) + 1, 1), #{auto_id}, trunc(sysdate), '성공', #{auto_money}, #{auto_inplace})
+    </insert> 
+    
+    <!-- 자동이체후 내계좌잔액감소 -->
+    <update id="updateAccountAutoTransfer" parameterType="java.util.Map">
+    	UPDATE account_tbl set balance=#{balance}
+    	 WHERE ACCOUNT=#{ACCOUNT}
+    </update>
+    
+    <!-- 자동이체완료시 최신납부일 최신화 -->
+    <update id="updateAutoTransfer" parameterType="int">
+    	UPDATE auto_transfer set auto_lastDay=sysdate WHERE auto_id=#{auto_id}
+    </update>
+    
+     <!--  자동이체 실패(자동이체 내역 테이블에 내역추가)  -->
+    <insert id="failAutoTransferList" parameterType="int">
+    	INSERT INTO auto_transfer_list(AUTO_TRANSFER_ID, AUTO_ID, AUTO_DATE, AUTO_SUCCESS)
+    	VALUES(((SELECT NVL(MAX(auto_transfer_id) + 1, 1), #{auto_id}, trunc(sysdate), '실패(잔액부족)')
+    </insert>
+    
+    <!-- 자동이체 만기 -->
+    <update id="exitAutoTransfer">
+    <![CDATA[
+    	UPDATE auto_transfer set auto_status=2
+    	 WHERE auto_expirationDate < sysdate
+    ]]>
+    </update>
+    
+</mapper>

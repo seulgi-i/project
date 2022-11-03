@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.DepositDAO">
+
+ 	<!-- 상품 목록 -->
+   <select id="depositList" resultType="com.mvc.upbank.dto.DepositDTO">
+		SELECT * FROM Deposit_product
+   </select>
+   
+	<!-- 상품 상세페이지 -->
+  	<select id="depositDetailPage" parameterType="String" resultType="com.mvc.upbank.dto.DepositDTO">
+  		SELECT * FROM Deposit_product WHERE y_name=#{y_name} 
+  	</select>
+  	
+   	<select id="rateDetailPage" parameterType="String" resultType="com.mvc.upbank.dto.DepositDTO">
+  		SELECT * FROM rate_tbl WHERE y_name=#{y_name} ORDER BY MONTH ASC 
+  	</select> 	
+  	
+  	
+  	<!-- 예금상품추가 -->
+	<insert id="rateInsert" parameterType="java.util.Map" >
+  		INSERT INTO rate_tbl (rate_id, y_name, rate, month)
+			 VALUES ((SELECT NVL(MAX(rate_id) + 1, 1) FROM rate_tbl), #{y_name},  #{rate}, #{month})
+   </insert>
+ 	<insert id="depositInsert" parameterType="com.mvc.upbank.dto.DepositDTO" >
+  		INSERT INTO Deposit_product (y_name, y_summary, rate, y_type, y_max_date, y_min_date, y_min_price, y_max_price, y_explanation, y_notice, y_fileImg)
+			 VALUES (#{y_name}, #{y_summary}, #{rate}, #{y_type} ,#{y_max_date}, #{y_min_date}, #{y_min_price}, #{y_max_price}, #{y_explanation}, #{y_notice}, #{y_fileImg})
+   </insert>  
+   
+   
+   
+   <!-- 예금상품수정 -->
+	<update id="depositUpdate" parameterType="com.mvc.upbank.dto.DepositDTO">
+	     UPDATE Deposit_product 
+	     	SET y_summary=#{y_summary}, rate=#{rate}, y_type=#{y_type}, 
+	     				y_max_date=#{y_max_date}, y_min_date=#{y_min_date}, y_min_price=#{y_min_price},
+	     				y_max_price=#{y_max_price}, y_explanation=#{y_explanation}, y_notice=#{y_notice}, y_fileImg=#{y_fileImg}
+	     WHERE y_name=#{y_name}
+     </update>
+	<update id="rateUpdate"  parameterType="java.util.Map">
+	     UPDATE  rate_tbl
+	     	    SET  rate=#{rate}
+	      WHERE  month=#{month}
+	           and   y_name=#{y_name}
+     </update>     
+     <!-- 예금상품삭제 -->
+	<delete id="depositDelete" parameterType="String">
+     DELETE FROM Deposit_product WHERE y_name=#{y_name}
+     </delete>
+	<delete id="rateDelete" parameterType="String">
+     DELETE FROM rate_tbl WHERE y_name=#{y_name}
+     </delete>	
+	
+   
+   <!-- 예금상품 가입 -->
+  	<insert id="depositJoin" parameterType="com.mvc.upbank.dto.DepositDTO" >
+	INSERT INTO Deposit(id, y_no, y_name, account, y_end_date, tf_account, y_money, tf_product_name)
+	VALUES (#{id}, (SELECT NVL(MAX(y_no) + 1, 1) FROM Deposit),#{y_name}, 
+	#{account},  ADD_MONTHS(TO_DATE(TO_CHAR(#{y_end_date}, 'yymmdd')),#{month}), #{tf_account}, #{y_money}, #{tf_product_name})
+   </insert> 
+   
+	<insert id="depositDefaultInsert" parameterType="com.mvc.upbank.dto.SearchDTO" >
+  		INSERT INTO ACCOUNT_TBL (ACCOUNT, ACCOUNT_NAME, PRODUCT_NAME, ID, ACCOUNT_PW, ACCOUNT_TYPE, 
+		ACCOUNT_STATE, TRANSFERABLE)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL),
+		#{ACCOUNT_NAME}, #{PRODUCT_NAME} , #{ID}, #{ACCOUNT_PW}, #{ACCOUNT_TYPE} , '정상', 1)
+		
+   </insert> 
+   <!-- 회원이 가입한 예금 정보 조회 -->
+	<select id="depositName" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT PRODUCT_NAME, ACCOUNT, NEW_DATE, LAST_DATE, BALANCE FROM ACCOUNT_TBL WHERE ACCOUNT_TYPE = '예금' AND id = #{id} 
+	</select>    
+	<!-- 예금상품 계좌 확인 -->
+ 	<select id="depositAccount" parameterType="java.util.Map" resultType="String">
+		SELECT  ACCOUNT  FROM ACCOUNT_TBL WHERE PRODUCT_NAME =#{PRODUCT_NAME} AND id = #{id} and account_state='정상'
+	</select> 
+	 
+	<!-- 입출금계좌 잔액 조회 -->
+	<select id="depositBalance" parameterType="String">
+     SELECT balance FROM ACCOUNT_TBL WHERE id=#{id} AND ACCOUNT_TYPE='입출금'
+     </select>	
+     
+     
+	<!-- 가입한 상품 조회하기 -->
+	 <select id="terminateListPage" resultType="com.mvc.upbank.dto.DepositDTO">
+		SELECT a.*, d.Y_NAME AS y_name, d.Y_END_DATE AS y_end_date, d.TF_ACCOUNT , d.TF_PRODUCT_NAME  FROM ACCOUNT_TBL a 
+		JOIN DEPOSIT d
+		  ON a.ACCOUNT = d.ACCOUNT 
+		WHERE a.id=#{id}
+		AND a.ACCOUNT_STATE  = '정상'
+		 UNION 
+		SELECT a.*, i.I_NAME AS y_name, i.I_END_DATE AS y_end_date, i.TF_ACCOUNT , i.TF_PRODUCT_NAME  FROM INSTALLMENT_SAVINGS i 
+		JOIN ACCOUNT_TBL a
+		  ON a.ACCOUNT = i.ACCOUNT 
+		WHERE a.id=#{id}
+		AND a.ACCOUNT_STATE  = '정상'
+     </select>     
+   
+ 	<!-- 상품 상세페이지 -->
+  	<select id="depositSelect" parameterType="String" resultType="com.mvc.upbank.dto.DepositDTO">
+  	SELECT * FROM Deposit WHERE id=#{id} 
+  	</select> 
+  	
+
+   	<!-- 해지상태 업데이트  -->
+ <update id="depositStateUpdate"  parameterType="java.util.Map">
+ 	UPDATE DEPOSIT 
+  		   SET y_state = '만기전 해지'
+  		WHERE id=#{id}
+		 AND Y_NAME =#{y_name}
+ </update> 
+    	<!-- 가입일과 비교한 예금정보  -->
+ <select id="depositCancle" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.DepositDTO"> 	
+		SELECT (SYSDATE-(SELECT NEW_DATE FROM ACCOUNT_TBL WHERE ACCOUNT = a.ACCOUNT))AS end, r.*, a.*, d.*
+		 FROM DEPOSIT d 
+		 JOIN RATE_TBL r 
+		   ON d.Y_NAME = r.Y_NAME 
+		 JOIN ACCOUNT_TBL a
+		   ON a.ACCOUNT = d.ACCOUNT 
+		 WHERE d.id=#{id}
+		  AND d.y_name=#{y_name}
+		  AND MONTH=#{month}
+		  AND a.ACCOUNT_STATE ='정상'  
+   	</select> 
+   <!-- 1-1) 가입일 해지일 비교 -->
+   <select id="depositCancleDate"  parameterType="java.util.Map" resultType="int">	
+	SELECT EXTRACT(DAY FROM (SYSDATE-(SELECT NEW_DATE FROM ACCOUNT_TBL WHERE ACCOUNT = a.ACCOUNT)))
+		from DEPOSIT d
+		JOIN ACCOUNT_TBL a
+		  ON a.ACCOUNT = d.ACCOUNT
+		WHERE d.Y_NAME =#{y_name}
+		  AND d.id=#{id}
+		  AND a.ACCOUNT_STATE ='정상'
+   	</select> 
+ <!-- 이자+원금 입금 -->
+ <update id="depositMoneyPlus"  parameterType="java.util.Map">
+ 	 UPDATE ACCOUNT_TBL a
+		   SET a.BALANCE = #{BALANCE}
+	 WHERE id=#{id}
+		   AND PRODUCT_NAME =#{PRODUCT_NAME}
+ </update>
+ <!-- 통장폐쇄  -->
+  <update id="depositMoneyMinus"  parameterType="java.util.Map">
+	 UPDATE ACCOUNT_TBL 
+		    SET ACCOUNT_STATE ='해지', DELETE_DATE = sysdate, BALANCE = 0
+	  WHERE id=#{id}
+		    AND PRODUCT_NAME =#{PRODUCT_NAME}
+ </update>
+ 
+
+ 
+ 
+</mapper>

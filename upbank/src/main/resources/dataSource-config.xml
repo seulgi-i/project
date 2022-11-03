@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+
+	<!-- 컨넥션풀 : 아래의 내용은 server의 context.xml과 일치해야함  -->
+
+		<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+			<property name="jndiName" value="java:comp/env/jdbc/teamupbanklocal" />
+			<property name="resourceRef" value="true" />
+		</bean>
+
+		
+	<!-- Mybatis 파일 위치 지정, 컨넥션풀. 경로(classpath)는 mappers폴더로 지정.. 
+		mappers는 컨트롤러에 따라 하나씩 지정해주는게 좋음. *경로가 이상하면 모든 창이 안뜸* -->
+		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+			<property name="dataSource" ref="dataSource" />
+			<property name="mapperLocations" value="classpath:mappers/**/*.xml" />  
+		</bean>
+	   
+	<!-- 생성자 DI이며, sqlSession이 참조변수 -->
+		<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+			<constructor-arg ref="sqlSessionFactory" />
+		</bean>
+	
+	<!-- Mybatis 설정 종료 -->
+	
+	<!-- 트랜잭션 관리자 : @Transactional 어노테이션 추가 -->
+	<!-- Namespace 탭에서 tx 체크추가 -->
+		<tx:annotation-driven transaction-manager="transactionManager" />
+		<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		   <property name="dataSource" ref="dataSource" />
+		</bean>
+	
+	<!-- 세팅이 끝나면 web.xml context-param에 추가되어야함 -->
+	
+	<!-- 스케줄러 추가 annotation:task -->
+	 <task:annotation-driven></task:annotation-driven>
+
+
+</beans>

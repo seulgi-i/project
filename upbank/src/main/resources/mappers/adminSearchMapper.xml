@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.AdminSearchDAO">
+<!-- namespace="패키지명.인터페이스" -->
+
+   	<!-- 가입시 이름/폰번에 해당하는 계좌 조회 , 금일잔고변동은 이체내역 테이블이 나오면 그때 합산가능.-->
+	<select id="adminSearchAccountInfo" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select count(account_name) cnt_account_name, count(id) cnt_id, count(account) cnt_account,
+	 	     count(CASE WHEN account_state='휴면' THEN 1 END) AS cnt_account_sleep,
+	 	     count(CASE WHEN substr(new_date,1,8) = substr(sysdate,1,8) THEN 1 END) AS cnt_account_new,
+	 	     count(CASE WHEN substr(last_date,1,8)= substr(sysdate,1,8) THEN 1 END) AS cnt_account_name_today,
+	 	     sum(balance)/10000 sum_balance
+	 	  from account_tbl
+	</select>
+	
+	<!-- 검색종류와 검색어를 모두 입력받아서 결과를 출력하는구문 -->
+	<select id="adminSearchAccount" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		SELECT * 
+  		  FROM ( SELECT C.*, rownum as rn 
+				from (select account_name, a.id id, a.account account, account_type, new_date, last_date, balance, account_state, i.i_end_date i_end_date
+					  from account_tbl a left outer join installment_savings i on a.account=i.account
+					 where ${searchType}=#{searchValue}
+			         order by id) C)
+         WHERE rn BETWEEN #{start} AND #{end} 
+	</select> 
+	<!-- 위 결과의 Count 출력- 페이징처리를위함 -->
+	<select id="cntAdminSearchAccount" parameterType="java.util.Map" resultType="int">
+		select count(*)
+		  from account_tbl a left outer join installment_savings i on a.account=i.account
+		 where ${searchType}=#{searchValue}
+	</select>
+	<!-- and concat('a.',#{searchType}) =#{searchValue} --> 
+	
+	
+	<!-- 위조건 + 기일도래 까지 받아서 결과 출력 // 하려고했으나, 일단 보류. +#{day}할거면 나중에 수정-->
+	<select id="adminSearchAccount_endday" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		SELECT * 
+  		  FROM ( SELECT C.*, rownum as rn 
+				from (select account_name, a.id id, a.account account, account_type, new_date, last_date, balance, account_state, i.i_end_date i_end_date
+					  from account_tbl a left outer join installment_savings i
+			          on a.account=i.account
+					 where i_end_date between sysdate and sysdate+30;
+					   and ${searchType}=#{searchValue}
+					 order by i_end_date) C)
+		 WHERE rn BETWEEN #{start} AND #{end} 			 
+	</select> 
+	<!-- 위 결과의 Count 출력 - 페이징처리를위함-->
+	<select id="cntAdminSearchAccount_endday" parameterType="java.util.Map" resultType="int">
+		select count(*)
+		  from account_tbl a left outer join installment_savings i
+          on a.account=i.account
+		 where i_end_date between sysdate and sysdate+#{day};
+		   and ${searchType}=#{searchValue}
+	</select>
+	
+	
+	<!-- 거래중지 대상 계좌 조회-->
+	<select id="adminAccountList_last_1year" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.AdminSearchDTO" >
+		SELECT * 
+  		  FROM ( SELECT A.*, rownum as rn 
+				from (select *
+					  from account_tbl
+				<![CDATA[
+					 where last_date<sysdate-365 and account_state='정상'
+				]]>
+					 order by last_date) A)
+		WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+	<!-- CNT 거래중지 대상 계좌 -->
+	<select id="cntAccountList_last_1year" resultType="int" >
+		select count(*)
+		  from account_tbl
+	<![CDATA[
+		 where last_date<sysdate-365 and account_state='정상'
+	]]>
+	</select>
+	
+	<!-- 휴면 대상 계좌 조회-->
+	<select id="adminAccountList_last_5year" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.AdminSearchDTO" >
+		SELECT * 
+  		  FROM ( SELECT A.*, rownum as rn 
+				from (select *
+					  from account_tbl
+					<![CDATA[
+					 where last_date<sysdate-1825 and account_state='거래중지'
+					]]>
+					 order by last_date) A)
+		WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+	<!-- CNT 휴면 대상 계좌 조회-->
+	<select id="cntAccountList_last_5year" resultType="int" >
+		select count(*)
+		  from account_tbl
+	<![CDATA[
+		 where last_date<sysdate-1825 and account_state='거래중지'
+	]]>
+	</select>
+	
+	<!-- 상태에 따른 계좌목록조회 -->
+	<select id="adminAccountList_state" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select *
+		  from account_tbl
+		 where account_state=#{account_state}
+		 order by last_date
+	</select>
+	<!-- CNT 상태에 따른 계좌 조회-->
+	<select id="cntAccountList_state" parameterType="String" resultType="int" >
+		select count(*)
+		  from account_tbl
+		 where account_state=#{account_state}
+	</select>
+	
+	<!-- 거래중지처리 -->
+	<update id="adminAccountChange_stop">
+		update account_tbl
+		   set account_state='거래중지', acc_state_content='1년이상 미사용 계좌'
+	 <![CDATA[
+		 where last_date< sysdate-365 and account_state='정상'
+	]]>
+	</update>
+	
+	<!-- 휴면처리 -->
+	<update id="adminAccountChange_sleep">
+		update account_tbl
+		   set account_state='휴면', acc_state_content='5년이상 미사용 계좌', sleep_date=sysdate
+	 <![CDATA[
+		 where last_date<sysdate-1825 and account_state='거래중지'   
+	]]>
+	</update>
+	
+	
+	<!-- 본인의 거래중지/휴면/해지 상태의 계좌조회 -->
+	<select id="sleepDisableAcc" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select * from account_tbl
+		 where account_state in ('거래중지', '휴면', '해지') and id=#{id}
+	</select> 
+	<!-- 본인의 거래중지 상태의 계좌조회 -->
+	<select id="memberAccountList_stopped" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select * from account_tbl
+		 where account_state='거래중지' and id=#{id}
+	</select> 
+	<!-- 본인의 휴면 상태의 계좌조회 -->
+	<select id="memberAccountList_state" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select * from account_tbl
+		 where account_state='휴면' and id=#{id}
+	</select>
+	<!-- 본인의 해지 상태의 계좌조회 -->
+	<select id="memberAccountList_cancled" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select * from account_tbl
+		 where account_state='해지' and id=#{id}
+	</select> 
+
+	<!-- 유저 계좌 정상화처리 -->
+	<update id="adminAccountChange_normal" parameterType="String">
+		update account_tbl
+		   set account_state='정상', acc_state_content='', last_date=sysdate, sleep_date=''
+		 where account=#{account}
+	</update>
+
+	<!-- 계좌 해지처리 -->
+	<update id="adminAccountChange_cancle" parameterType="String">
+		update account_tbl
+		   set account_state='해지', acc_state_content='휴면계좌 해지', last_date=sysdate, delete_date=sysdate
+		 where account=#{account}
+	</update>
+	
+	<!-- account로 계좌1건 조회 -->
+	<select id="searchAccount" parameterType="String" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+		select * from account_tbl
+		 where account=#{account}
+	</select> 
+	
+	<!-- 연도별+상태별 계좌 생성수 -->
+	<select id="cntAccountYearState" resultType="com.mvc.upbank.dto.AdminSearchDTO">
+	select count(CASE WHEN account_state='정상' THEN 1 END) AS cnt_account_normal,
+       count(CASE WHEN account_state='거래중지' THEN 1 END) AS cnt_account_stopped,
+       count(CASE WHEN account_state='휴면' THEN 1 END) AS cnt_account_sleep,
+       count(CASE WHEN account_state='해지' THEN 1 END) AS cnt_account_cancled
+	  from account_tbl
+	group by substr(new_date,1,2)
+	</select>
+		
+</mapper>

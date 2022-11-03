@@ -1,0 +1,27 @@
+1. 본인폴더에 jsp파일 생성 
+
+2. 본인이 가져오길 원하는 html파일 열어서
+
+맨윗줄에 <!DOCTYPE html> 지우고 아래 utf설정 붙여넣기 
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+2. 상단부 js, css파일 다 지우기
+
+대충 <head> 밑쯤에
+<%@ include file="/WEB-INF/views/common/setting.jsp" %>
+입력
+
+<%@ include file="/WEB-INF/views/common/header.jsp" %>
+<%@ include file="/WEB-INF/views/common/footer.jsp" %>
+
+3. 하단부 js, css파일 다 지우기 
+
+
+---------------- 페이지 테스트하는법 -----------------------
+
+CustomerController 실행
+
+return 뒤에 본인폴더명/jsp파일명(.jsp 제외) 입력하고
+(예를들어 제가 a.jsp라는 파일을 실행시 return "chaey/a";)
+
+main.do 입력해서 들어가면됨

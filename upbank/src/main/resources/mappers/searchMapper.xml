@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.SearchDAO">
+<!-- namespace="패키지명.인터페이스" -->
+
+	
+	<!-- 
+   1. <mapper namespace="패키지명.인터페이스명">
+   
+   2. <id="인터페이스의 메서드명">는 유일해야 하며, 인터페이스의 메서드명을 사용한다.
+      따라서 인터페이스 메서드 갯수만큼 Mapper도 작성해야 한다.
+   
+   3. select 문장은 반드시 resultType을 기술해야 한다.
+      주의사항 : select 문장의 resultType이 int형이면 "SELECT * " ==> "SELECT COUNT(*) "로 바꾼다.
+   
+   4. insert, update, delete 구문은 <insert><update><delete> 엘리먼트를 사용하며, parameterType이 필수이다.
+      resultType은 int형이며, 마이바티스가 알아서 성공, 실패 여부의 결과값을 넘긴다.
+   
+   5. parameterType, resultType이 클래스타입인 경우 패키지명.클래스명을 기술한다.
+   
+   6. 문장의 끝에 ';'을 붙이지 않는다.
+   
+   7. 주의사항 : 파라미터 일반변수명은 #{변수명}으로 기술하며, 메서드의 매개변수명과 반드시 일치해야 한다. 예) id=#{strId}
+   
+   8. 파라미터 값이 2개이상일 때는 parameterType을 java.util.Map 또는 VO로 받는다.
+      주의사항 : Map에 추가(put)된 키명와 #{변수명}은 반드시 일치해야 한다.
+   
+   9. preparedStatement의 '?' 대신에 pstmt에서 set한 변수명이 온다. ==> #{변수명}
+	-->
+	<!-- 대출 계좌 맵 -->
+	<resultMap type="com.mvc.upbank.dto.LoanAccountDTO" id="loanMap">
+		<id		property="l_num"		column="l_num"/>
+		<result	property="account"	column="account" />
+		<result	property="l_status"	column="l_status" />
+		<result	property="l_start_date"	column="l_start_date" />
+		<result	property="l_end_date"	column="l_end_date" />
+		<result	property="l_repay"	column="l_repay" />
+		<result	property="l_rate"	column="l_rate" />
+		<result	property="l_principal"	column="l_principal" />
+		<result	property="l_interest"	column="l_interest" />
+		<result	property="l_balance_principal"	column="l_balance_principal" />
+		<result	property="l_termination_fee_rate"	column="l_termination_fee_rate" />
+		<result	property="l_period"	column="l_period" />
+		<association property="accInfo"		column="l_num"	select="getAcc" />
+	</resultMap>
+		
+	<!-- 대출 계좌 맵 내의 getAcc -->
+	<select id="getAcc" parameterType="int" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT a.* FROM account_tbl a JOIN loan_account l ON a.account = l.account WHERE l_num = #{l_num}
+	</select>
+	
+	
+	<!-- Account 테이블 -->
+			
+	<!-- 해당 유저의 전체계좌 조회 -->
+	<select id="SearchEveryAcc" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT  a.ACCOUNT , a.PRODUCT_NAME  , a.NEW_DATE , a.LAST_DATE , a.BALANCE, a.ACCOUNT_TYPE 
+		FROM ACCOUNT_TBL a
+		WHERE id = #{id}
+	</select>
+	
+	<!-- 신규 입출금계좌 개설 -->
+	<insert id="AccDefaultInsert" parameterType="com.mvc.upbank.dto.SearchDTO" >
+  		INSERT INTO ACCOUNT_TBL (ACCOUNT, ACCOUNT_NAME, PRODUCT_NAME, ID, ACCOUNT_PW, ACCOUNT_TYPE, 
+		ACCOUNT_STATE, TRANSFERABLE)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL),
+		#{ACCOUNT_NAME}, 'upBank 자유로운 입출금통장', #{ID}, #{ACCOUNT_PW}, '입출금', '정상', 1)
+   </insert> 
+   
+   <!-- 비대면 입출금계좌 개설 -->
+	<insert id="AccAnonymInsert" parameterType="com.mvc.upbank.dto.SearchDTO" >
+  		INSERT INTO ACCOUNT_TBL (ACCOUNT, ACCOUNT_NAME, PRODUCT_NAME, ACCOUNT_PW, ACCOUNT_TYPE, 
+		ACCOUNT_STATE, TRANSFERABLE, phone)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL),
+		 #{ACCOUNT_NAME}, 'upBank 기본 입출금통장', #{ACCOUNT_PW}, '입출금', '정상', 1, #{phone})
+   </insert> 
+	
+	<!-- 예금주 이름 조회 -->
+	<select id="SearchAccName" parameterType="String" resultType="String">
+		SELECT name FROM member_tbl WHERE id = #{id}
+	</select>
+	
+	<!-- 해당 계좌 개설성공여부 (상품명, ID로 검색)-->
+	<select id="AccDefaultInsertChk" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*) FROM ACCOUNT_TBL WHERE PRODUCT_NAME = #{PRODUCT_NAME} AND id = #{id} 
+	</select>
+	
+	<!-- 해당 계좌 개설성공여부 (휴대전화번호,상품명으로 검색)-->
+	<select id="AccAnonymInsertChk" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*) FROM ACCOUNT_TBL WHERE phone = #{phone} and PRODUCT_NAME = #{PRODUCT_NAME}
+	</select>
+	
+	<!-- 해당 계좌 존재여부 확인(계좌번호로 검색)-->
+	<select id="BeAccount" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM ACCOUNT_TBL WHERE ACCOUNT = #{ACCOUNT}
+	</select>
+	
+	<!-- 해당 계좌 모든정보검색(계좌번호로 검색)-->
+	<select id="SearchAll" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT * FROM ACCOUNT_TBL WHERE ACCOUNT = #{ACCOUNT}
+	</select>
+	
+	<!-- 개인의 입출금 계좌 조회 -->
+	<select id="SearchProductName" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT PRODUCT_NAME, ACCOUNT, NEW_DATE, LAST_DATE, BALANCE FROM ACCOUNT_TBL WHERE ACCOUNT_TYPE = #{ACCOUNT_TYPE} AND id = #{id} 
+	</select>
+	
+	<!-- 회원의 특정 계좌 모든 정보 조회-->
+	<select id="SearchAccAllColumn" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT * FROM ACCOUNT_TBL WHERE ACCOUNT = #{ACCOUNT} AND id = #{id} 
+	</select>
+	
+	<!-- 비회원의 특정 계좌 모든 정보 조회-->
+	<select id="SearchAccAllColumn2" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT * FROM ACCOUNT_TBL WHERE PRODUCT_NAME = #{PRODUCT_NAME} AND phone = #{phone} 
+	</select>
+	
+	<!-- 개인의 휴면 및 해지 계좌 조회 위해 모든 데이터 가져옴-->
+	<select id="SleepDisableAcc" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT  * FROM ACCOUNT_TBL 
+		WHERE id = #{id} AND ACCOUNT_STATE != '정상'
+	</select>
+	
+	<!-- 계좌 1개의 잔액조회 -->
+	<select id="SearchOneAccBalance" parameterType="java.util.Map" resultType="int">
+		SELECT BALANCE FROM ACCOUNT_TBL WHERE PRODUCT_NAME = #{PRODUCT_NAME} AND id = #{id} 
+	</select>
+	
+	<!-- 수령대기중인 환전 정보 카운트-->
+	<select id="EnableCurrencyExcCnt" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*) FROM CUREXCHANGE_INFO WHERE enable = '1' AND id = #{id} 
+	</select>
+	
+	<!-- 기간별 거래내역조회-->
+	<select id="SearchRangeSelectAction" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.TransferDTO">
+		SELECT * FROM account_transfer WHERE tf_date BETWEEN #{start_date} AND #{end_date} ORDER BY tf_date DESC
+	</select>
+	
+	<!-- 계좌별 거래내역조회-->
+	<select id="SearchDetailTransfer" parameterType="String" resultType="com.mvc.upbank.dto.TransferDTO">
+		SELECT * FROM account_transfer WHERE ACCOUNT = #{ACCOUNT} OR tf_sender_acc = #{ACCOUNT}
+	</select>
+	
+	<!-- 대출 만기도래현황 조회(기일경과 혹은 1개월이내 도래분)-->
+	<select id="SoonEndLoanSearch" parameterType="java.util.Map" resultMap="loanMap">
+		SELECT * FROM LOAN_ACCOUNT la JOIN ACCOUNT_TBL at2 ON at2.ACCOUNT = la.account
+		WHERE at2.ID = #{id}
+		AND L_END_DATE 
+		BETWEEN SYSDATE 
+		AND (SELECT ADD_MONTHS(SYSDATE,1) FROM DUAL)
+ 		ORDER BY L_END_DATE DESC
+	</select>
+	
+	<!-- 해당일의 수익 조회 -->
+	<select id="dailyProfit" parameterType="String" resultType="int">
+	SELECT NVL(sum_data, 0) FROM (SELECT sum(TF_CHARGES) AS sum_data FROM TF_CHARGES_PROFIT WHERE TF_PROFIT &lt;= #{date})
+	
+	</select>
+	
+</mapper>

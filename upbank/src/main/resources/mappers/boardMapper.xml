@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.BoardDAO">
+
+	<!-- 공지사항 작성처리 -->
+	<insert id="noticeInsert" parameterType="com.mvc.upbank.dto.BoardDTO">
+		INSERT INTO notice_tbl(n_No, n_title, n_content)
+		VALUES((SELECT NVL(MAX(n_No) + 1, 1) FROM notice_tbl), #{n_title}, #{n_content})
+	</insert>
+	
+	<!-- 공지사항 갯수조회 -->
+	<select id="noticeCnt" resultType="int">
+		SELECT count(*) as cnt FROM notice_tbl
+	</select>
+	
+	<!-- 공지사항 목록조회 -->
+	<select id="noticeList" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.BoardDTO">
+		<![CDATA[
+			SELECT *
+			  FROM (SELECT A.*
+			             , rownum as rn
+			          FROM (SELECT * FROM notice_tbl
+			         		 WHERE n_SHOW='y'
+			                 ORDER BY n_No DESC
+			                ) A
+			        )
+			    WHERE rn >= #{start} AND rn <= #{end}
+	   ]]>
+	</select>
+	
+	<!-- 조회수 증가 -->
+	<update id="plusReadCnt" parameterType="int">
+		UPDATE notice_tbl SET n_readCnt = n_readCnt+1 WHERE n_No = #{n_No}
+	</update>
+	
+   <!-- 공지사항 상세조회 -->
+   <select id="noticeDetail" parameterType="int" resultType="com.mvc.upbank.dto.BoardDTO">
+      SELECT * FROM notice_tbl WHERE n_No = #{n_No}
+   </select>
+   
+   <!-- 공지사항 수정처리 -->
+   <update id="noticeUpdate" parameterType="com.mvc.upbank.dto.BoardDTO">
+   UPDATE notice_tbl 
+      SET n_title=#{n_title}
+        , n_content=#{n_content}
+    WHERE n_No=#{n_No}
+   </update>
+	
+	<!-- 공지사항 삭제처리 -->
+   <update id="noticeDelete" parameterType="int">
+   UPDATE notice_tbl 
+      SET n_show = 'n'
+    WHERE n_No=#{n_No}
+   </update>
+	
+	
+	<!-- *******상담게시판****** -->	
+	
+	<!-- 상담신청 처리 -->
+	<insert id="cnsltInsert" parameterType="com.mvc.upbank.dto.BoardDTO">
+		INSERT INTO consult_tbl(c_No, user_id, c_title, c_content, c_category)
+		VALUES((SELECT NVL(MAX(c_No) + 1, 1) FROM consult_tbl), #{user_id}, #{c_title}, #{c_content}, #{c_category})
+	</insert>
+	
+	<!-- 상담 갯수조회 -->
+	<select id="cnsltCnt" resultType="int" parameterType="String">
+		SELECT count(*) as cnt FROM consult_tbl 
+		<if test="!id.equals('admin')">
+		where USER_ID=#{id}
+		</if>
+	</select>
+	
+		<!-- 상담 목록조회 -->
+	<select id="cnsltList" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.BoardDTO">
+		
+			SELECT *
+			  FROM (SELECT A.*
+			             , rownum as rn
+			          FROM (SELECT * FROM consult_tbl
+			         		 WHERE c_SHOW='y'
+			                 ORDER BY c_No DESC
+			                ) A
+			        )
+			    <![CDATA[
+			    WHERE rn >= #{start} AND rn <= #{end}
+	 			  ]]>
+			    <if test="!id.equals('admin')">
+			    and USER_ID=#{id}
+			    </if>
+	</select>
+	
+	<!-- 상담 상세조회 -->
+   <select id="cnsltDetail" parameterType="int" resultType="com.mvc.upbank.dto.BoardDTO">
+      SELECT * FROM consult_tbl WHERE c_No = #{c_No}
+   </select>
+	
+	<!-- 상담 수정처리 -->
+   <update id="cnsltUpdate" parameterType="com.mvc.upbank.dto.BoardDTO">
+   UPDATE consult_tbl 
+      SET c_title=#{c_title}
+        , c_category=#{c_category}
+        , c_content=#{c_content}
+    WHERE c_No=#{c_No}
+   </update>
+   
+   	<!-- 상담 삭제처리 -->
+   <update id="cnsltDelete" parameterType="int">
+   UPDATE consult_tbl 
+      SET c_show = 'n'
+    WHERE c_No=#{c_No}
+   </update>
+   
+   <!-- *******댓글****** -->
+   <!-- 댓글목록 조회 -->
+   <select id="commentList" parameterType="int" resultType="com.mvc.upbank.dto.CommentDTO">
+      SELECT * FROM comment_tbl 
+      WHERE c_No = #{c_No} ORDER BY cmt_No ASC
+   </select>
+	
+	<!-- 댓글 추가처리 -->
+   <insert id="commentInsert" parameterType="com.mvc.upbank.dto.CommentDTO">
+   	  INSERT INTO comment_tbl(cmt_No, cmt_content, cmt_name, c_No)
+	  VALUES((SELECT NVL(MAX(cmt_No) + 1, 1) FROM comment_tbl), #{cmt_content}, #{cmt_name}, #{c_No})
+   </insert>
+   
+   <!-- 답변 완료처리-->
+   <update id="cnsltCommentUpdate" parameterType="int">
+   UPDATE consult_tbl 
+      SET c_comment = '답변완료'
+    WHERE c_No=#{c_No}
+   </update>
+	
+	
+</mapper>

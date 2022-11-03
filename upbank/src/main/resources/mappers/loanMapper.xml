@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.LoanDAO">
+	<!-- 대출 상품 맵 -->
+	<resultMap type="com.mvc.upbank.dto.LoanProductDTO" id="productMap">
+		<id		property="loan_num"		column="loan_num"/>
+		<result	property="loan_name"	column="loan_name" />
+		<result	property="loan_date"	column="loan_date" />
+		<result	property="loan_status"	column="loan_status" />
+		<result	property="loan_limit"	column="loan_limit" />
+		<result	property="loan_limit_summary"	column="loan_limit_summary" />
+		<result	property="loan_period"	column="loan_period" />
+		<result	property="loan_period_summary"	column="loan_period_summary" />
+		<result	property="loan_repay"	column="loan_repay" />
+		<result	property="loan_repay_summary"	column="loan_repay_summary" />
+		<result	property="loan_termination_fee"	column="loan_termination_fee" />
+		<result	property="loan_note"	column="loan_note" />
+		<collection property="rate"		column="loan_num"	select="getRate" />
+	</resultMap>
+	
+	<!-- 대출 상품 맵 내의 getRate -->
+	<select id="getRate" parameterType="int" resultType="com.mvc.upbank.dto.LoanProductRateDTO">
+		SELECT * FROM loan_rate WHERE loan_num = #{loan_num} ORDER BY loan_rate ASC
+	</select>
+	
+	<!-- 대출 계좌 맵 -->
+	<resultMap type="com.mvc.upbank.dto.LoanAccountDTO" id="accMap">
+		<id		property="l_num"		column="l_num"/>
+		<result	property="account"	column="account" />
+		<result	property="l_status"	column="l_status" />
+		<result	property="l_start_date"	column="l_start_date" />
+		<result	property="l_end_date"	column="l_end_date" />
+		<result	property="l_repay"	column="l_repay" />
+		<result	property="l_rate"	column="l_rate" />
+		<result	property="l_principal"	column="l_principal" />
+		<result	property="l_interest"	column="l_interest" />
+		<result	property="l_balance_principal"	column="l_balance_principal" />
+		<result	property="l_termination_fee_rate"	column="l_termination_fee_rate" />
+		<result	property="l_period"	column="l_period" />
+		<association property="accInfo"		column="l_num"	select="getAcc" />
+	</resultMap>
+		
+	<!-- 대출 계좌 맵 내의 getAcc -->
+	<select id="getAcc" parameterType="int" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT a.* FROM account_tbl a JOIN loan_account l ON a.account = l.account WHERE l_num = #{l_num}
+	</select>
+
+
+	<!-- 사용자 -->
+	<!-- 대출 상품 갯수 구하기 -->
+	<select id="productCnt" resultType="int">
+		SELECT COUNT(*) FROM loan_product
+	</select>
+	
+	<!-- 대출 상품 리스트 조회 -->
+	<select id="productList" parameterType="java.util.Map" resultMap="productMap">
+		SELECT *
+		  FROM (SELECT A.*, rownum rn
+		          FROM (SELECT * FROM loan_product) A)
+		 WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+
+	<!-- 대출 상품 상세 조회 -->
+	<select id="productDetail" parameterType="int" resultMap="productMap">
+		SELECT * FROM loan_product p WHERE p.loan_num = #{loan_num}
+	</select>
+	
+	<!-- 대출 신청 처리 -->
+	<insert id="loanJoin" parameterType="com.mvc.upbank.dto.LoanJoinDTO">
+		INSERT INTO loan_join(l_join_num, id, name, account, loan_num,
+			<if test="social_num != null">social_num,</if>
+			<if test="social_etc != null">social_etc,</if>
+			<if test="postcode != null">postcode,</if>
+			<if test="address != null">address,</if>
+			<if test="address_detail != null">address_detail,</if>
+                        phone, emergency_phone, l_principal, l_period, l_repay, 
+            <if test="l_start_date != null">l_start_date, </if>
+                        l_apply_date, loan_rate)
+		    VALUES(l_join_num.NEXTVAL, #{id}, #{name}, #{account}, #{loan_num},
+			<if test="social_num != null">#{social_num},</if>
+			<if test="social_etc != null">#{social_etc},</if>
+			<if test="postcode != null">#{postcode},</if>
+			<if test="address != null">#{address},</if>
+			<if test="address_detail != null">#{address_detail},</if>
+		            #{phone}, #{emergency_phone}, #{l_principal}, #{l_period}, #{l_repay}, 
+            <if test="l_start_date != null">#{l_start_date}, </if>
+              		sysdate, #{loan_rate})
+	</insert>
+	
+	<!-- 직전 대출 신청 넘버 가져오기 -->
+	<select id="getJoinNum" parameterType="String" resultType="int">
+		SELECT MAX(l_join_num) FROM loan_join WHERE id=#{id}
+	</select>
+	
+	<!-- 대출 신청 갯수 구하기 -->
+	<select id="getJoinCnt" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM loan_join WHERE id = #{id}
+	</select>
+	
+	<!-- 대출 신청 목록 조회 -->
+	<select id="joinList" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.LoanJoinDTO">
+		SELECT *
+		  FROM (SELECT A.*, rownum rn
+		          FROM (SELECT p.loan_name, r.rate_basemoney, j.* FROM loan_join j JOIN loan_product p ON j.loan_num = p.loan_num
+                                                        							JOIN loan_rate r ON r.loan_rate = j.loan_rate
+                                                        			 WHERE id = #{id}
+                       												 ORDER BY j.l_join_num desc) A)
+		 WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- 대출 신청 상세 조회 -->
+	<select id="joinDetail" parameterType="int" resultType="com.mvc.upbank.dto.LoanJoinDTO">
+		SELECT * FROM loan_join WHERE l_join_num = #{join_num}
+	</select>
+	
+	<!-- 사용자 대출 계좌 갯수 구하기 -->
+	<select id="onesAccCnt" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM account_tbl WHERE account_type='대출' AND id=#{id}
+	</select>
+	
+	<!-- 사용자 대출 계좌 목록 조회 -->
+	<select id="onesAccList" parameterType="java.util.Map" resultMap="accMap">
+		SELECT *
+		  FROM (SELECT A.*, rownum rn
+		          FROM (SELECT * FROM account_tbl a
+		                        JOIN loan_account l ON a.account = l.account
+		                WHERE a.id = #{id} 
+		                <if test="l_status != null">AND l_status = #{l_status}</if>
+		                ORDER BY a.new_date DESC) A)
+		  WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- 사용자 대출 계좌 상세 조회 -->
+	<select id="accDetail" parameterType="String" resultMap="accMap">
+		SELECT * FROM account_tbl a JOIN loan_account l ON a.account = l.account WHERE a.account = #{account}
+	</select>	
+	
+	<!-- 사용자 대출 계좌 이체 내역 조회 -->
+	<select id="transList" parameterType="String" resultType="com.mvc.upbank.dto.TransferDTO">
+		SELECT *
+		 FROM account_transfer t, account_tbl m
+		WHERE t.account = m.account
+		  AND m.account = '596700981207'
+	</select>
+	
+	<!-- 사용자 대출 계좌 중도 상환 처리 -->
+ 	<update id="loanTerminate" parameterType="com.mvc.upbank.dto.LoanAccountDTO">
+		UPDATE loan_account SET l_balance_principal = #{l_balance_principal}, l_status = #{l_status} WHERE account = #{account}
+	</update>
+	
+	
+	
+	
+	<!-- 관리자 -->
+	<!-- 대출 상품 입력 -->
+	<insert id="productInsert" parameterType="com.mvc.upbank.dto.LoanProductDTO">
+		INSERT INTO loan_product(loan_num, loan_name, loan_summary, loan_date, loan_status, loan_rate_summary, loan_limit,
+						loan_period, loan_repay, loan_repay_summary, loan_termination_fee, loan_note)
+	    VALUES(loan_product_num.NEXTVAL, #{loan_name}, #{loan_summary}, sysdate, #{loan_status}, #{loan_rate_summary}, #{loan_limit},
+	    	#{loan_period}, #{loan_repay}, #{loan_repay_summary}, #{loan_termination_fee}, #{loan_note})
+	</insert>
+	<select id="get_loan_num" resultType="int">
+		SELECT MAX(loan_num) FROM loan_product
+	</select>
+	<insert id="productRateInsert" parameterType="com.mvc.upbank.dto.LoanProductRateDTO">
+		INSERT INTO loan_rate(loan_rate, loan_num, 
+			<if test="rate_status != null">rate_status, </if> 
+			<if test="rate_name != null">rate_name, </if> 
+			<if test="rate_change != null">rate_change, </if> 
+			rate_basemoney, 
+			<if test="rate_spread != null">rate_spread, </if>
+			<if test="rate_prime != null">rate_prime </if>)
+    	VALUES(loan_rate_num.NEXTVAL, #{loan_num}, 
+   			<if test="rate_status != null">#{rate_status}, </if>
+   			<if test="rate_name != null">#{rate_name}, </if>
+   			<if test="rate_change != null">#{rate_change}, </if>
+   			#{rate_basemoney}, 
+   			<if test="rate_spread != null">#{rate_spread}, </if>
+   			<if test="rate_prime != null">#{rate_prime} </if>)
+	</insert>
+	
+	<!-- 대출 신청 갯수 구하기 -->
+	<select id="getAllJoinCnt" resultType="int">
+		SELECT COUNT(*) FROM loan_join
+	</select>
+	
+	<!-- 대출 신청 목록 조회 -->
+	<select id="AllJoinList" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.LoanJoinDTO">
+		SELECT *
+		  FROM (SELECT A.*, rownum rn
+		          FROM (SELECT p.loan_name, r.rate_basemoney, j.* FROM loan_join j JOIN loan_product p ON j.loan_num = p.loan_num
+                                                        							JOIN loan_rate r ON r.loan_rate = j.loan_rate
+                                                        		ORDER BY j.l_join_num desc) A)
+		 WHERE rn BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- 대출 승인/불가 업데이트 처리 -->
+	<update id="joinConfirm" parameterType="java.util.Map">
+		UPDATE loan_join SET l_confirm = #{l_confirm} WHERE l_join_num = #{l_join_num}
+	</update>
+	
+	<!-- 신규 계좌 개설 -->
+	<insert id="accInsert" parameterType="java.util.Map">
+		INSERT INTO account_tbl (account, balance,
+        account_name, product_name, id, account_pw, account_type, account_state, transferable, phone)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL), #{balance},
+		#{account_name}, #{product_name}, #{id}, '0000', '대출', '정상', 0, #{phone})
+	</insert>
+	
+	<!-- 개설한 계좌 번호 받아오기 -->
+	<select id="getaccNum" resultType="String">
+		SELECT account FROM account_tbl WHERE account_type = '대출' AND new_date = (SELECT MAX(new_date) FROM account_tbl)
+	</select>
+	
+	<!-- 대출 상품 금리 가져오기 -->
+	<select id="getLoanRate" parameterType="int" resultType="com.mvc.upbank.dto.LoanProductRateDTO">
+		SELECT * FROM loan_rate WHERE loan_rate = #{loan_rate} 
+	</select>
+
+	<!-- 대출 계좌 개설 -->
+	<insert id="loanAccInsert" parameterType="com.mvc.upbank.dto.LoanAccountDTO">
+		INSERT INTO loan_account(l_num, account, l_status, l_start_date, l_end_date, 
+	    	l_repay, l_rate, l_principal, l_interest, l_balance_principal, l_termination_fee_rate)
+	    VALUES(l_num.NEXTVAL, #{account}, #{l_status}, #{l_start_date}, ADD_MONTHS(#{l_start_date}, #{l_period}),
+	    	#{l_repay}, #{l_rate}, #{l_principal}, #{l_interest}, #{l_balance_principal}, #{l_termination_fee_rate})
+	</insert>
+	
+	<!-- 특수 -->
+	<!-- 회원 정보 가져오기 -->
+	<select id="getCustomerInfo" parameterType="String" resultType="com.mvc.upbank.dto.CustomerDTO">
+		select * from member_tbl where id=#{strId}
+	</select>
+</mapper>

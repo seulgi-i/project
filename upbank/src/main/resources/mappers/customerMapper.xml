@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.CustomerDAO">
+<!-- namespace="패키지명.인터페이스" -->
+
+
+   <!-- 시큐리티 : key 컬럼 추가 -->      
+   <insert id="insertCustomer" parameterType="com.mvc.upbank.dto.CustomerDTO">
+      INSERT INTO member_tbl(id, password, name, birthday, address, address_detail, phone, email, reg_date, key)
+      VALUES(#{id}, #{password}, #{name}, #{birthday}, #{address}, #{address_detail}, #{phone}, #{email}, sysdate, #{key})
+   </insert>
+
+   <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 한다. -->
+   <select id="selectKey" parameterType="String" resultType="int">
+      SELECT COUNT(*) FROM member_tbl WHERE key=#{key}
+   </select>
+ 
+   <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 하며, 1로수정 -->
+   <update id="updateGrade" parameterType="String">
+      UPDATE member_tbl
+         SET enabled=1
+       WHERE key=#{key}
+   </update>
+   
+   <!-- 시큐리티 - 로그인 인증시 호출 -->
+   <select id="selectCustomer" parameterType="String" resultType="com.mvc.upbank.dto.CustomerDTO">
+      SELECT * FROM member_tbl WHERE id=#{id}
+   </select>
+   
+   <!-- 시큐리티 - authority Check : UserLoginSuccessHandler에서 호출 -->
+   <select id="authorityCheck" resultType="String">
+      SELECT authorities FROM member_tbl WHERE id=#{id}
+   </select>
+   
+   <!-- 시큐리티 - UserLoginFailureHandler -->
+   <select id="pwdCheck" parameterType="String" resultType="String">
+      SELECT password FROM member_tbl WHERE id=#{strId}
+   </select>
+   
+   <!-- 시큐리티 : 로그인 전 이메일 인증을 해야 한다. -->
+   <select id="idCheck" parameterType="String" resultType="int">
+      SELECT COUNT(*) FROM member_tbl WHERE id=#{strId}
+   </select>
+   
+   	<!-- 가입시 이름/폰번에 해당하는 계좌 조회 -->
+	<select id="accountInfobyPw" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT * FROM ACCOUNT_TBL
+	 	 WHERE ACCOUNT=#{ACCOUNT} AND ACCOUNT_PW=#{ACCOUNT_PW} AND ACCOUNT_NAME=#{name}
+	</select>
+	
+	<!-- Account테이블에 Id업데이트 -->
+	<update id="registerId" parameterType="java.util.Map">
+      UPDATE account_tbl
+         SET id=#{id}
+       WHERE ACCOUNT=#{account}
+   </update>
+   
+   <!-- 회원정보 인증 및 회원 수정 상세페이지 -->
+	<select id="getCustomerDetail" parameterType="String" resultType="com.mvc.upbank.dto.CustomerDTO">
+		SELECT * FROM member_tbl WHERE id=#{strId}
+	</select>
+	
+	<!-- 회원정보 수정 처리 -->
+	<update id="updateCustomer" parameterType="com.mvc.upbank.dto.CustomerDTO">
+		UPDATE member_tbl
+		SET password=#{password}, name=#{name}, birthday=#{birthday}, job=#{job}, address=#{address}, address_detail=#{address_detail}, phone=#{phone}, email=#{email} WHERE id=#{id}
+	</update>
+	
+	<!-- 회원정보 수정 처리2 비번제외 -->
+	<update id="updateCustomer2" parameterType="com.mvc.upbank.dto.CustomerDTO">
+		UPDATE member_tbl
+		SET name=#{name}, birthday=#{birthday}, job=#{job}, address=#{address}, address_detail=#{address_detail}, phone=#{phone}, email=#{email} WHERE id=#{id}
+	</update>
+	
+</mapper>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.installmentSavingsDAO">
+
+ 	<!-- 상품 목록 -->
+   <select id="inssvnList" resultType="com.mvc.upbank.dto.installmentSavingsDTO">
+		SELECT * FROM savings_product
+   </select>
+   
+	<!-- 상품 상세페이지 -->
+  	<select id="inssvnDetailPage" parameterType="String" resultType="com.mvc.upbank.dto.installmentSavingsDTO">
+  		SELECT * FROM savings_product WHERE i_name=#{i_name}
+  	</select>
+   	<select id="rateDetailPage" parameterType="String" resultType="com.mvc.upbank.dto.installmentSavingsDTO">
+  		SELECT * FROM rate_tbl WHERE i_name=#{i_name} ORDER BY MONTH ASC 
+  	</select> 		
+  	<!-- 예금상품추가 -->
+	<insert id="rateInsert" parameterType="java.util.Map" >
+  		INSERT INTO rate_tbl (rate_id, i_name, rate, month)
+			 VALUES ((SELECT NVL(MAX(rate_id) + 1, 1) FROM rate_tbl), #{i_name},  #{rate}, #{month})
+   </insert>	
+	<insert id="inssvnInsert" parameterType="com.mvc.upbank.dto.installmentSavingsDTO" >
+  		INSERT INTO savings_product (i_name, i_summary, rate, i_type, i_method, i_max_date, i_min_date, i_min_price, i_max_price, i_explanation, i_notice, i_fileImg)
+			 VALUES (#{i_name}, #{i_summary},#{rate} ,#{i_type}, #{i_method}, #{i_max_date}, #{i_min_date},  #{i_min_price}, #{i_max_price}, #{i_explanation}, #{i_notice}, #{i_fileImg})
+   </insert>
+   
+   <!-- 예금상품수정 -->
+	<update id="inssvnUpdate" parameterType="com.mvc.upbank.dto.installmentSavingsDTO">
+	     UPDATE savings_product 
+	     	SET 
+	     		i_summary=#{i_summary}, rate=#{rate}, i_type=#{i_type},  i_max_date=#{i_max_date}, 
+	     		i_min_date=#{i_min_date}, i_explanation=#{i_explanation}, i_notice=#{i_notice}, i_fileImg=#{i_fileImg}
+	     WHERE i_name=#{i_name}
+     </update>
+ 	<update id="rateUpdate"  parameterType="java.util.Map">
+	     UPDATE  rate_tbl 
+	     	    SET  rate=#{rate}
+	      WHERE  month=#{month}
+	           and   i_name=#{i_name}
+     </update>     
+     <!-- 예금상품삭제 -->
+	<delete id="inssvnDelete" parameterType="String">
+     DELETE FROM savings_product WHERE i_name=#{i_name}
+     </delete>
+		<delete id="rateDelete" parameterType="String">
+     DELETE FROM rate_tbl WHERE i_name=#{i_name}
+     </delete>	
+     
+     
+     
+     
+     
+     <!-- /////////////////////고객용//////////////////////// -->
+     
+   
+    <!-- 예금상품 가입 -->
+  	<insert id="inssvnJoin" parameterType="com.mvc.upbank.dto.installmentSavingsDTO" >
+	INSERT INTO installment_savings(id, i_no, i_name, account, i_end_date, tf_account, i_money, tf_product_name)
+	VALUES (#{id}, (SELECT NVL(MAX(i_no) + 1, 1) FROM installment_savings),#{i_name}, 
+	#{account},  ADD_MONTHS(TO_DATE(TO_CHAR(#{i_end_date}, 'yymmdd')),#{month}), #{tf_account}, #{i_money}, #{tf_product_name})
+   </insert> 
+   
+   <!-- 적금계좌 생성 -->
+	<insert id="inssvnDefaultInsert" parameterType="com.mvc.upbank.dto.SearchDTO" >
+  		INSERT INTO ACCOUNT_TBL (ACCOUNT, ACCOUNT_NAME, PRODUCT_NAME, ID, ACCOUNT_PW, ACCOUNT_TYPE, 
+		ACCOUNT_STATE, TRANSFERABLE)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL),
+		#{ACCOUNT_NAME}, #{PRODUCT_NAME} , #{ID}, #{ACCOUNT_PW}, #{ACCOUNT_TYPE} , '정상', 1)
+   </insert> 
+   <!-- 회원이 가입한 예금 정보 조회 -->
+	<select id="inssvnName" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT PRODUCT_NAME, ACCOUNT, NEW_DATE, LAST_DATE, BALANCE FROM ACCOUNT_TBL WHERE ACCOUNT_TYPE = '적금' AND id = #{id} 
+	</select>    
+	<!-- 예금상품 계좌 확인 -->
+ 	<select id="inssvnAccount" parameterType="java.util.Map" resultType="String">
+		SELECT  ACCOUNT  FROM ACCOUNT_TBL WHERE PRODUCT_NAME =#{PRODUCT_NAME}  AND id = #{id}  and account_state='정상'
+	</select> 
+	 
+	<!-- 입출금계좌 잔액 조회 -->
+	<select id="inssvnBalance" parameterType="String">
+     SELECT balance FROM ACCOUNT_TBL WHERE id=#{id} AND ACCOUNT_TYPE='입출금'
+     </select>	    
+     <!-- 적금 계좌 납부금액 조회 -->
+      	<select id="inssvnSelect" parameterType="String" resultType="com.mvc.upbank.dto.installmentSavingsDTO">
+     SELECT * FROM installment_savings WHERE id=#{id}
+     </select>	   
+     
+     
+       <!-- 해지상태 업데이트  -->
+ <update id="inssvnStateUpdate"  parameterType="java.util.Map">
+ 	UPDATE installment_savings 
+  		   SET i_state = '만기전 해지'
+  		WHERE id=#{id}
+		 AND I_NAME =#{i_name}
+ </update> 
+    	<!-- 가입일과 비교한 예금정보  -->
+ <select id="inssvnCancle" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.installmentSavingsDTO"> 	
+		SELECT (SYSDATE-(SELECT NEW_DATE FROM ACCOUNT_TBL WHERE ACCOUNT = a.ACCOUNT))AS end, r.*, a.*, d.*
+		 FROM installment_savings d 
+		 JOIN RATE_TBL r 
+		   ON d.I_NAME = r.I_NAME 
+		 JOIN ACCOUNT_TBL a
+		   ON a.ACCOUNT = d.ACCOUNT 
+		 WHERE d.id=#{id}
+		  AND d.i_name=#{i_name}
+		  AND MONTH=#{month}
+		  AND a.ACCOUNT_STATE ='정상'
+   	</select> 
+   <!-- 1-1) 가입일 해지일 비교 -->
+   <select id="inssvnCancleDate"  parameterType="java.util.Map" resultType="int">	
+SELECT EXTRACT(DAY FROM (SYSDATE-(SELECT NEW_DATE FROM ACCOUNT_TBL WHERE ACCOUNT = a.ACCOUNT)))
+	from installment_savings d
+	JOIN ACCOUNT_TBL a
+	  ON a.ACCOUNT = d.ACCOUNT
+	WHERE d.I_NAME =#{i_name}
+	  AND d.id=#{id}
+	  AND a.ACCOUNT_STATE ='정상'
+   	</select> 
+   	
+   	
+   	 	<!-- 가입한 해당 예금상품 정보 불러오기 -->
+ 	<select id="selectMyinssvn" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.installmentSavingsDTO">
+		SELECT  *  FROM INSTALLMENT_SAVINGS i JOIN ACCOUNT_TBL a ON i.ACCOUNT=a.ACCOUNT 
+		WHERE i.I_NAME =#{i_name} AND i.id =#{id} and a.ACCOUNT_STATE ='정상'
+	</select> 
+</mapper>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+     
+<mapper namespace="com.mvc.upbank.dao.FundDAO">
+<!-- namespace="패키지명.인터페이스" -->
+
+	
+	<!-- 
+   1. <mapper namespace="패키지명.인터페이스명">
+   
+   2. <id="인터페이스의 메서드명">는 유일해야 하며, 인터페이스의 메서드명을 사용한다.
+      따라서 인터페이스 메서드 갯수만큼 Mapper도 작성해야 한다.
+   
+   3. select 문장은 반드시 resultType을 기술해야 한다.
+      주의사항 : select 문장의 resultType이 int형이면 "SELECT * " ==> "SELECT COUNT(*) "로 바꾼다.
+   
+   4. insert, update, delete 구문은 <insert><update><delete> 엘리먼트를 사용하며, parameterType이 필수이다.
+      resultType은 int형이며, 마이바티스가 알아서 성공, 실패 여부의 결과값을 넘긴다.
+   
+   5. parameterType, resultType이 클래스타입인 경우 패키지명.클래스명을 기술한다.
+   
+   6. 문장의 끝에 ';'을 붙이지 않는다.
+   
+   7. 주의사항 : 파라미터 일반변수명은 #{변수명}으로 기술하며, 메서드의 매개변수명과 반드시 일치해야 한다. 예) id=#{strId}
+   
+   8. 파라미터 값이 2개이상일 때는 parameterType을 java.util.Map 또는 VO로 받는다.
+      주의사항 : Map에 추가(put)된 키명와 #{변수명}은 반드시 일치해야 한다.
+   
+   9. preparedStatement의 '?' 대신에 pstmt에서 set한 변수명이 온다. ==> #{변수명}
+	-->
+	
+	<!-- Account 테이블 -->
+	
+	<!-- 신규 펀드계좌 개설 -->
+	<insert id="fundAccountInsert" parameterType="com.mvc.upbank.dto.SearchDTO" >
+  		INSERT INTO ACCOUNT_TBL (ACCOUNT, ACCOUNT_NAME, PRODUCT_NAME, ID, ACCOUNT_PW, ACCOUNT_TYPE, 
+		ACCOUNT_STATE, TRANSFERABLE)
+		values((SELECT TRUNC(DBMS_RANDOM.VALUE(111111111111, 999999999999))AS account FROM DUAL),
+		#{ACCOUNT_NAME}, 'upBank 종합 펀드 통장', #{ID}, #{ACCOUNT_PW}, '펀드', '정상', 1)
+   </insert> 
+   
+   	<!-- 개인의 입출금 계좌 조회 -->
+ 	<select id="SearcFundName" parameterType="String" resultType="com.mvc.upbank.dto.SearchDTO">
+		SELECT PRODUCT_NAME, ACCOUNT, NEW_DATE, LAST_DATE, BALANCE, ACCOUNT_PW  FROM ACCOUNT_TBL WHERE ACCOUNT_TYPE = '펀드' AND id = #{id} 
+	</select> 
+	
+	<!-- 펀드 구매 -->
+	<insert id="fundBuy" parameterType="com.mvc.upbank.dto.FundDTO">
+		insert into fund_tbl (f_no, itemcode, itemname, id, f_account, f_val ,f_cnt, f_totalPrice, f_fee, f_finalTotalPrice, f_type)
+		values((SELECT NVL(MAX(f_no) + 1, 1) FROM fund_tbl),#{itemcode}, #{itemname}, #{id}, #{f_account}, #{f_val}, #{f_cnt}, #{f_totalPrice}, #{f_fee}, #{f_finalTotalPrice}, #{f_type})
+	</insert>
+	
+	<!-- 마이페이지 -->
+	<select id="fundMypage" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.FundDTO">
+		select sum(f_cnt) as f_cnt, sum(f_totalprice) as f_totalprice,  (TRUNC (   sum(f_totalprice) / DECODE(sum(f_cnt), 0, null, sum(f_cnt)), 0 )) as f_val, itemcode, itemname, f_account
+		from fund_tbl
+		<if test="!id.equals('admin')">
+		where id=#{id}
+		</if>
+		group by  itemcode, itemname, f_account
+		order by f_totalprice DESC
+	</select>
+	
+	<!-- 잔고 업데이트 -->
+	<update id="fundBalanceUpdate" parameterType="java.util.Map">
+		update ACCOUNT_TBL
+	    set BALANCE = #{BALANCE}
+	    WHERE ACCOUNT = #{ACCOUNT}
+	    AND id = #{id}
+	</update>
+	
+	<!-- 펀드 보유 내역 조회 -->
+	<select id="fundCnt" parameterType="java.util.Map" resultType="int">
+		select sum(f_cnt) as f_cnt
+		from fund_tbl
+		where id=#{id}
+		and itemcode = #{itemcode}
+	</select>
+	
+	<!-- 펀드 거래 내역 조회 -->
+	<select id="fundSearch" parameterType="java.util.Map" resultType="com.mvc.upbank.dto.FundDTO">
+
+		select*
+		from fund_tbl 
+		<if test="!id.equals('admin')">
+			where id = #{id}
+		
+			<if test="!itemcode.equals('All')">
+			and itemcode = #{itemcode}
+			</if>
+			
+			<if test="type.equals('All')">
+			and f_type in('매수','매도')
+			</if>
+			
+			<if test="!type.equals('All')">
+			and f_type in(#{type})
+			</if>
+		</if>
+		
+		<if test="id.equals('admin')">
+			
+			<if test="!itemcode.equals('All')">
+				where itemcode = #{itemcode}
+				
+				<if test="type.equals('All')">
+				and f_type in('매수','매도')
+				</if>
+				
+				<if test="!type.equals('All')">
+				and f_type in(#{type})
+				</if>
+			</if>
+			
+			<if test="itemcode.equals('All')">
+				<if test="type.equals('All')">
+				where f_type in('매수','매도')
+				</if>
+				
+				<if test="!type.equals('All')">
+				where f_type in(#{type})
+				</if>
+			</if>
+			
+		</if>
+		
+		<![CDATA[
+		AND f_date >= to_date(#{start},'yy-mm-dd')
+		AND f_date <= to_date(#{end},'yy-mm-dd')
+		ORDER BY f_date DESC
+		   ]]>
+	</select>
+	
+	
+	
+</mapper>
+

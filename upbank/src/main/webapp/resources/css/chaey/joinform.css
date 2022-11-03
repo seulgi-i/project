@@ -1,0 +1,130 @@
+@charset "UTF-8";
+
+.join_whether_tbl{
+	max-width: 100%;
+	color: #413f42;
+	margin-top:20px;
+	text-align:center; 
+	width:800px; 
+	height:150px;
+	border-top: 3px solid #6693d1;
+    border-collapse: collapse;
+}
+
+.join_whether_tbl input {
+   color: #413f42;
+   width: 80%;
+   height: 70%;
+   font-size:15px;
+   text-align:center;
+   margin-top:9px;
+   
+}
+
+.join_whether_tbl th:first-child{
+    border-left: none;
+}
+
+.join_whether_tbl th{
+	background-color: #eeeff1;
+	font-size: 16px;
+	padding: 3px;
+	text-weight: bold;
+	border-bottom: 2px solid #a3a9b6;
+    border-left: 2px solid #a3a9b6;
+}
+
+.join_whether_tbl td{
+	height: 60px;
+	border-bottom: 2px solid #a3a9b6;
+    border-left: 2px solid #a3a9b6;
+}
+
+
+
+/* 
+body {
+   background-color: #FFFFFF;
+   font-size: 13px;
+   font-family: SEBANG_Gothic_Regular;
+   color: #FFFFFF;
+   padding: 4px;
+}
+
+table {
+   border: 2px solid darkgray;
+   border-radius: 5px;
+   background-color: #FFFFFF;
+   font-size: 13px;
+}
+
+.input {
+   background-color: #FFFFFF;
+   border: 1px solid darkgray;
+}
+
+.inputButton {
+   background-color: #FFFFFF;
+   color: #CC3D3D;
+   width: 70px;
+   font-size: 11px;
+   margin: 3px;
+}
+
+th {
+   background-color: #FFFFFF;
+   color: black;
+   font-size: 13px;
+   border: 1px solid darkgray;
+   margin: 0px;
+   padding: 3px;
+   height: 35px;
+   width: 120px;
+}
+
+td {
+   background-color: whitesmoke;
+   color: #CC3D3D;
+   font-size: 11px;
+   border: 1px solid darkgray;
+   margin: 0px;
+   padding: 3px;
+   height: 35px;
+   width: 270px;
+}
+
+span {
+   font-size: 1.1em;
+   color: red;
+   font-weight: bold;
+}
+
+center {
+   color: #CC3D3D;
+   font-size: 1.1em;
+}
+
+.button {
+   display: inline-block;
+   outline: none;
+   cursor: pointer;
+   text-align: center;
+   text-decoration: none;
+   font-family: SEBANG_Gothic_Regular;
+   font: 14px/100%;
+   color: whitesmoke;
+   background-color: #FFFFFF;;
+   border-color: #FFEAEA;;
+   padding: .5em .5em .55em;
+   width: 70px;
+}
+
+.button:hover {
+   text-decoration: none;
+}
+
+.button:active {
+   position: relative;
+   top: 1px; 
+   */
+}
