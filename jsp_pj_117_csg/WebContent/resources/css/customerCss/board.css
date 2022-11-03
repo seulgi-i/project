@@ -1,0 +1,191 @@
+@charset "UTF-8";
+
+
+#container {
+    width: 100%;
+    margin: 0 auto;
+    height: 99%;
+    margin-top: 190px;
+}
+
+
+#contents a button{
+	display:inline-block;
+	margin-left :40px;
+
+}
+
+button, input, optgroup, select, textarea {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    background: linen;
+}
+
+#contents a button:hover{/*마우스 갖다 올렸을 때*/
+   background-color : #fdddde;
+   border-radius: 27px;
+}
+
+#section2 {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   color: black;
+}
+#section1 {
+	font-size:13px;
+	text-align:center;
+}
+#center{
+	    margin-left: 50px;
+}
+
+
+table {
+	border-collapse: collapse;
+	
+}
+
+caption {
+	display:none;
+	
+}
+.navbar_menu a {
+	text-decoration : none;
+	color : black;
+}
+
+
+.board_notice th,
+.board_notice td {
+	
+	height: 66px;
+	font-size : 14px;
+	color : black;
+		
+}
+.board_notice2 tbody tr:hover{/*마우스 갖다 올렸을 때*/
+   background-color : #fdddde;
+   border-radius : 4px;
+}
+
+.board_notice_wrap {
+	width: 88%;
+    height: 229px;
+    position: relative;
+    padding: -10px;
+	float: center;
+}
+.board_notice2 tbody tr:hover{/*마우스 갖다 올렸을 때*/
+   background-color : #fdddde;
+   border-radius : 4px;
+}
+
+
+.board_notice td {
+	text-align : center;
+		color : black;
+	
+}
+.board_notice td a {
+		color : black;
+}
+.board_notice .tit:nth-child(2) {
+	text-align : left;
+		color : black;
+}
+
+
+
+.board_notice_wrap .paging {
+	margin-top : 30px;
+	text-align : center;
+	font-size : 0;
+}
+.board_notice_wrap .paging a {
+	display : inline-block;
+	margin : 10px;
+	padding : 5px 10px;
+	border-radius: 27px;
+	font-size : 12px;
+}
+
+
+.board_notice_wrap .paging a {
+	border: 1px solid #ffe3e9;
+		color : black;
+}
+
+.board_notice_wrap .paging a {
+	border: 1px solid black;
+	color : black;
+	
+}
+/* .board_notice_wrap .paging a.num.on {
+	background : #ffbdcc;
+	color : black;
+}
+ 다음버튼 색깔*/
+
+
+.container-fluid {
+    background-color: #fff;
+	float: center;
+}
+
+
+
+tbody, td, tfoot, th, thead, tr {
+    border-color: inherit;
+    border-style: solid;
+    border-width: 0;
+    border: 1px solid black;
+}
+.table_div {
+   margin-top: 50px;
+}
+
+.table_div table {
+   border-collapse: collapse;
+}
+
+.table_div table th, td {
+  height: 60px;
+   padding-left:10px;
+}
+
+.table_div table th {
+  background: transparent;
+}
+
+.inputButton {
+   background-color: dark-yellow;
+   font-size: 16px;
+   padding: 10px 15px 10px 15px;
+}
+input#btnList.inputbutton{
+	background-color:white;
+	margin-left: 867px;
+}
+input {
+   padding: 2px 2px;
+}
+
+.input {
+    width: 675px;
+    height: 40px;
+    border: 1px solid gray;
+    box-sizing: border-box;
+    padding: 0 0 0 10px;
+    background: transparent;
+}
+
+
+
+
+
+
+
+
